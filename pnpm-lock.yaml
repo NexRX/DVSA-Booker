@@ -11,6 +11,9 @@ importers:
       '@webext-core/storage':
         specifier: ^1.2.0
         version: 1.2.0
+      lodash-es:
+        specifier: ^4.17.21
+        version: 4.17.21
       nanostores:
         specifier: ^1.0.1
         version: 1.0.1
@@ -20,6 +23,9 @@ importers:
       solid-js:
         specifier: ^1.9.7
         version: 1.9.7
+      webext-storage:
+        specifier: ^2.0.1
+        version: 2.0.1
     devDependencies:
       '@crxjs/vite-plugin':
         specifier: ^2.0.3
@@ -2163,6 +2169,9 @@ packages:
     resolution: {integrity: sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g==}
     engines: {node: '>=8'}
 
+  lodash-es@4.17.21:
+    resolution: {integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==}
+
   lodash.memoize@4.1.2:
     resolution: {integrity: sha512-t7j+NzmgnQzTAYXcsHYLgimltOV1MXHtlOWf6GjL9Kj8GK5FInw5JotxvbOs+IvV1/Dzo04/fCGfLVs7aXb4Ag==}
 
@@ -3099,6 +3108,13 @@ packages:
   watchpack@2.4.4:
     resolution: {integrity: sha512-c5EGNOiyxxV5qmTtAB7rbiXxi1ooX1pQKMLX/MIabJjRA0SJBQOjKF+KSVfHkr9U1cADPon0mRiVe/riyaiDUA==}
     engines: {node: '>=10.13.0'}
+
+  webext-polyfill-kinda@1.0.2:
+    resolution: {integrity: sha512-rqQUKeBTOicej0tjDJWDQlOTnDcm9yYJTzgI+7rMdyYV4QHmYMRm+yjkcVgECkg/Wu9MboZ4lYeBPdp1Ep9WgQ==}
+
+  webext-storage@2.0.1:
+    resolution: {integrity: sha512-DbKAiV4xUva9grslYC/A7jv7mIlWikU+QvadQp54V21Hqsfx4fHWFhSF2GVvEcf7mSvTHOXp0U86hG5Qyv9W2w==}
+    engines: {node: '>=20'}
 
   webextension-polyfill@0.10.0:
     resolution: {integrity: sha512-c5s35LgVa5tFaHhrZDnr3FpQpjj1BB+RXhLTYUxGqBVN460HkbM8TBtEqdXWbpTKfzwCcjAZVF7zXCYSKtcp9g==}
@@ -5637,6 +5653,8 @@ snapshots:
     dependencies:
       p-locate: 4.1.0
 
+  lodash-es@4.17.21: {}
+
   lodash.memoize@4.1.2: {}
 
   lru-cache@5.1.1:
@@ -6532,6 +6550,12 @@ snapshots:
     dependencies:
       glob-to-regexp: 0.4.1
       graceful-fs: 4.2.11
+
+  webext-polyfill-kinda@1.0.2: {}
+
+  webext-storage@2.0.1:
+    dependencies:
+      webext-polyfill-kinda: 1.0.2
 
   webextension-polyfill@0.10.0: {}
 

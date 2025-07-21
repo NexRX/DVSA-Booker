@@ -5,7 +5,6 @@ import { Tabs } from "./components/tabs";
 import Home from "./home";
 import Settings from "./settings";
 import { state } from "@src/state/solid";
-import { $state, $settings } from "@src/state";
 
 const appContainer = document.querySelector("#app-container");
 if (!appContainer) {
@@ -14,8 +13,6 @@ if (!appContainer) {
 
 function Popup() {
   const [selectedTab, setSelectedTab] = createSignal(0);
-  $state.setKey("loaded", true);
-  $settings.setKey("loaded", true);
 
   return (
     <div

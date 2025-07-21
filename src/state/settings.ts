@@ -1,4 +1,5 @@
-import { persistentMap } from "nanostores-persistent-solid";
+import { StorageItem } from "webext-storage";
+import { storage } from "./storage";
 
 export type TSettings = {
   version: 0;
@@ -23,11 +24,9 @@ const settingsDefaultV0 = {
   timingRandomizePercent: 33,
 } as const;
 
-export const $settings = persistentMap<TSettings>(
-  "settings:",
-  settingsDefaultV0,
-  {
-    encode: JSON.stringify,
-    decode: JSON.parse,
-  }
-);
+export const initialSettings = settingsDefaultV0;
+
+export const settings = new StorageItem<TSettings>("settings", {
+  defaultValue: initialSettings,
+  area: storage,
+});

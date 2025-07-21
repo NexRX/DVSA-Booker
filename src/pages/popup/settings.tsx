@@ -1,6 +1,5 @@
 import { Component, JSX } from "solid-js";
-import { $settings } from "@src/state";
-import { settings } from "@src/state/solid";
+import { settings, setSettings } from "@src/state/solid";
 import InputGroup from "./components/input-group";
 import TextBox from "./components/textbox";
 import ToolTip from "./components/tooltip";
@@ -16,7 +15,9 @@ const Settings: Component = () => {
         </ToolTip>
         <TextBox
           value={settings().driverLicence}
-          setter={(value) => $settings.setKey("driverLicence", value)}
+          setter={(value) =>
+            setSettings({ ...settings(), driverLicence: value })
+          }
         />
       </InputGroup>
       <InputGroup name="Test Reference">
@@ -28,7 +29,7 @@ const Settings: Component = () => {
           value={settings().driverTestReference}
           numbersOnly
           setter={(value) =>
-            $settings.setKey("driverTestReference", Number(value))
+            setSettings({ ...settings(), driverTestReference: Number(value) })
           }
         />
       </InputGroup>
