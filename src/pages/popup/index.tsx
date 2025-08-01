@@ -15,10 +15,7 @@ function Popup() {
   const [selectedTab, setSelectedTab] = createSignal(0);
 
   return (
-    <div
-      id="app"
-      class="flex flex-col gap-4 w-[28rem] p-4 text-white bg-gray-700"
-    >
+    <div id="app" class="flex flex-col gap-4 w-[28rem] p-4 text-white bg-gray-700">
       <div class="flex flex-row items-center justify-center w-full border border-red-500 rounded-lg gap-6 ">
         <img src={logo} class="w-20" alt="DVSA Test Booker Logo" />
         <h1 class="text-2xl font-bold">DVSA Test Booker</h1>

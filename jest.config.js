@@ -156,12 +156,7 @@ export default {
   // ],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-  testPathIgnorePatterns: [
-    "<rootDir>/node_modules/",
-    "<rootDir>/test-utils/",
-    "<rootDir>/vite.config.ts",
-    "<rootDir>/jest.config.js",
-  ],
+  testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/test-utils/", "<rootDir>/vite.config.ts", "<rootDir>/jest.config.js"],
 
   // The regexp pattern or array of patterns that Jest uses to detect test files
   // testRegex: [],

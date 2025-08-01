@@ -1,9 +1,7 @@
 import { defineManifest } from "@crxjs/vite-plugin";
 import packageJson from "../package.json";
 
-const [major, minor, patch, label = "0"] = packageJson.version
-  .replace(/[^\d.-]+/g, "")
-  .split(/[.-]/);
+const [major, minor, patch, label = "0"] = packageJson.version.replace(/[^\d.-]+/g, "").split(/[.-]/);
 
 export default defineManifest({
   manifest_version: 3,
@@ -25,10 +23,7 @@ export default defineManifest({
   ],
   content_scripts: [
     {
-      matches: [
-        "https://driverpracticaltest.dvsa.gov.uk/*",
-        "https://example.com/*",
-      ], // Replace with your domain
+      matches: ["https://driverpracticaltest.dvsa.gov.uk/*", "https://example.com/*"], // Replace with your domain
       // @ts-ignore
       js: ["src/pages/content/index.ts"],
     },

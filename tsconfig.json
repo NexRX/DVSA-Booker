@@ -22,11 +22,5 @@
       "@pages/*": ["src/pages/*"]
     }
   },
-  "include": [
-    "src",
-    "utils",
-    "vite.config.ts",
-    "node_modules/@types",
-    "src/manifest.ts"
-  ]
+  "include": ["src", "utils", "vite.config.ts", "node_modules/@types", "src/manifest.ts"]
 }

@@ -7,25 +7,23 @@ type TextBoxProps<T extends string | number> = {
   placeholder?: string;
   class?: string;
   numbersOnly?: boolean;
+  dateOnly?: boolean;
 };
 
-export default function TextBox<T extends string | number>(
-  props: TextBoxProps<T>
-) {
-  const [local, rest] = splitProps(props, [
-    "icon",
-    "value",
-    "placeholder",
-    "setter",
-    "class",
-    "numbersOnly",
-  ]);
+export default function TextBox<T extends string | number>(props: TextBoxProps<T>) {
+  const [local, rest] = splitProps(props, ["icon", "value", "placeholder", "setter", "class", "numbersOnly", "dateOnly"]);
   const handleInput = (e: Event) => {
     let value = (e.currentTarget as HTMLInputElement).value;
     if (local.numbersOnly) {
       // Remove all non-digit characters
       const filtered = value.replace(/\D/g, "");
       local.setter(filtered);
+    } else if (local.dateOnly) {
+      const date = new Date(value);
+      const isValid = !isNaN(date.getTime());
+      if (isValid) {
+        local.setter(value);
+      }
     } else {
       local.setter(value);
     }
@@ -36,16 +34,10 @@ export default function TextBox<T extends string | number>(
         local.class ?? ""
       }`}
     >
-      {local.icon && (
-        <span class="mr-2 text-gray-400 flex items-center">{local.icon}</span>
-      )}
+      {local.icon && <span class="mr-2 text-gray-400 flex items-center">{local.icon}</span>}
       <input
-        type={props.numbersOnly ? "number" : "text"}
-        value={
-          local.numbersOnly
-            ? String(local.value).replace(/\D/g, "")
-            : local.value
-        }
+        type={props.numbersOnly ? "number" : props.dateOnly ? "date" : "text"}
+        value={local.numbersOnly ? String(local.value).replace(/\D/g, "") : local.value}
         placeholder={local.placeholder}
         onInput={handleInput}
         class="outline-none bg-transparent flex-1 text-gray-800 placeholder-gray-400"

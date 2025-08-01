@@ -9,9 +9,7 @@ export type ToolTipProps = {
 
 export default function ToolTip(props: ToolTipProps) {
   const [hovered, setHovered] = createSignal(false);
-  const [position, setPosition] = createSignal<"center" | "left" | "right">(
-    "center"
-  );
+  const [position, setPosition] = createSignal<"center" | "left" | "right">("center");
   const [safeWidth, setSafeWidth] = createSignal<string | undefined>(undefined);
   let tooltipRef: HTMLDivElement | undefined;
   let iconRef: HTMLSpanElement | undefined;
@@ -54,10 +52,7 @@ export default function ToolTip(props: ToolTipProps) {
   const maxWidthClass = props.maxWidthClass ?? "max-w-lg";
 
   return (
-    <span
-      ref={iconRef}
-      class={`relative inline-flex items-center ${props.class ?? ""}`}
-    >
+    <span ref={iconRef} class={`relative inline-flex items-center ${props.class ?? ""}`}>
       <span
         class="cursor-pointer text-white hover:text-blue-700 bg-slate-500 rounded-full w-[18px] h-[18px] border border-blue-500 mt-[2px]"
         onMouseEnter={handleMouseEnter}
@@ -71,13 +66,7 @@ export default function ToolTip(props: ToolTipProps) {
         <div
           ref={tooltipRef}
           class={`absolute z-10 bottom-full mb-2 px-3 py-2 rounded bg-gray-800 text-white text-xs shadow-lg whitespace-normal break-words border border-slate-600/65 ${maxWidthClass}
-            ${
-              position() === "center"
-                ? "left-1/2 -translate-x-1/2"
-                : position() === "left"
-                ? "left-0"
-                : "right-0"
-            }
+            ${position() === "center" ? "left-1/2 -translate-x-1/2" : position() === "left" ? "left-0" : "right-0"}
           `}
           style={safeWidth() ? { width: safeWidth() } : undefined}
         >

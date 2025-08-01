@@ -2,5 +2,6 @@
   "singleQuote": false,
   "trailingComma": "es5",
   "requirePragma": false,
-  "arrowParens": "always"
+  "arrowParens": "always",
+  "printWidth": 140
 }

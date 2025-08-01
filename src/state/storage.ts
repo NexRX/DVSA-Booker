@@ -7,10 +7,7 @@ export const storage: "sync" | "local" | "managed" | "session" = "local";
 // Debounce duration in milliseconds
 const DEBOUNCE_MS = 100;
 
-export function createStorageSignal<T extends Object>(
-  key: string,
-  defaultValue: T
-) {
+export function createStorageSignal<T extends Object>(key: string, defaultValue: T) {
   const [value, setValue] = createSignal<T>(defaultValue, { equals: false });
 
   // Load initial value from chrome.storage

@@ -1,5 +1,16 @@
 import { state } from "@src/state";
+import onLogin from "./on-login";
+import onManage from "./on-manage";
+import { navigateTo } from "@src/utils";
 
-console.log("Hello, World!");
+if ((await state.get()).enabled) {
+  console.log("DVSA Booker Enabled & Routing");
+  const path = window.location.pathname;
 
-console.log(await state.get());
+  if (path.startsWith("/login")) onLogin();
+  if (path == "/manage") onManage();
+  else {
+    console.log("Error", "Unknown page returning to homepage in 65 seconds");
+    // setTimeout(() => navigateTo("login"), 65);
+  }
+}
