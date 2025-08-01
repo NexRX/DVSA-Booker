@@ -116,3 +116,87 @@ export function getYMD(dateOrMs: Date | number): string {
 
   return `${year}-${month}-${day}`;
 }
+type PlayAudioOptions = {
+  /** If truthy, loop the audio and if number the delay between loops in milliseconds */
+  loop?: boolean | number;
+};
+
+type AudioHandler = {
+  readonly stop: () => void;
+};
+
+let currentAudio: AudioHandler | null = null;
+let audioContext: AudioContext | null = null;
+
+export function playAudio(soundUrl: string, opt: PlayAudioOptions = {}): AudioHandler {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+
+  let stopped = false;
+  let timeoutId: number | null = null;
+  let source: AudioBufferSourceNode | null = null;
+
+  // Stop any currently playing audio
+  if (currentAudio !== null) {
+    currentAudio.stop();
+  }
+
+  // Helper to stop playback
+  const stop = () => {
+    stopped = true;
+    if (source) {
+      source.stop();
+      source.disconnect();
+      source = null;
+    }
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+    }
+  };
+
+  // Function to play the buffer, with optional looping
+  const playBuffer = (buffer: AudioBuffer) => {
+    if (stopped) return;
+    source = audioContext!.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContext!.destination);
+
+    if (opt.loop && typeof opt.loop === "boolean") {
+      source.loop = true;
+      source.start(0);
+    } else {
+      source.loop = false;
+      source.start(0);
+      source.onended = () => {
+        if (stopped) return;
+        if (opt.loop && typeof opt.loop === "number") {
+          timeoutId = window.setTimeout(() => playBuffer(buffer), opt.loop);
+        }
+      };
+    }
+  };
+
+  // Fetch and decode the audio file
+  fetch(chrome.runtime.getURL(soundUrl))
+    .then((res) => res.arrayBuffer())
+    .then((data) => audioContext!.decodeAudioData(data))
+    .then((buffer) => {
+      if (!stopped) playBuffer(buffer);
+    });
+
+  const handler: AudioHandler = { stop };
+  currentAudio = handler;
+  return handler;
+}
+
+export function stopAudio() {
+  if (currentAudio !== null) {
+    currentAudio.stop();
+    currentAudio = null;
+  }
+}
+
+export function exists(query: string) {
+  return document.querySelector(query) !== null;
+}

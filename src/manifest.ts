@@ -8,16 +8,20 @@ export default defineManifest({
   name: packageJson.displayName ?? packageJson.name,
   version: `${major}.${minor}.${patch}.${label}`,
   description: packageJson.description,
-  permissions: ["storage"],
+  permissions: ["storage", "offscreen"],
   action: {
     // @ts-ignore
     default_popup: "src/pages/popup/index.html",
     // @ts-ignore
     default_icon: "logo.png",
   },
+  background: {
+    // @ts-ignore
+    service_worker: "src/pages/background/background.ts",
+  },
   web_accessible_resources: [
     {
-      resources: ["assets/js/*.js", "assets/css/*.css", "assets/img/*"],
+      resources: ["assets/js/*.js", "assets/css/*.css", "assets/img/*", "assets/sounds/*.mp3", "background/*"],
       matches: ["*://*/*"],
     },
   ],
@@ -25,7 +29,7 @@ export default defineManifest({
     {
       matches: ["https://driverpracticaltest.dvsa.gov.uk/*", "https://example.com/*"], // Replace with your domain
       // @ts-ignore
-      js: ["src/pages/content/index.ts"],
+      js: ["src/pages/content/index.tsx"],
     },
   ],
 });

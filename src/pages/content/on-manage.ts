@@ -1,20 +1,21 @@
 import { settings } from "@src/state";
+import { ManageState } from "@src/state/search";
 import { click, simulateTyping, wait } from "@src/utils";
 
-export default async function onManage() {
+export default async function onManage(state: ManageState) {
   const setting = await settings.get();
   await wait(100, 20);
 
-  switch (getManagedPage()) {
-    case "view":
+  switch (state) {
+    case "manage-view":
       click("test-centre-change");
       break;
-    case "select-center":
-      simulateTyping("test-centres-input", setting.searchPostcode);
+    case "manage-select-center":
+      await simulateTyping("test-centres-input", setting.searchPostcode);
       await wait(20);
       click("test-centres-submit");
       break;
-    case "search-results":
+    case "manage-search-results":
       const testLinks = findTest();
       if (testLinks.length > 0) {
         const [date, link] = testLinks[0];
@@ -26,7 +27,7 @@ export default async function onManage() {
         click("fetch-more-centres");
       }
       break;
-    case "test-time":
+    case "manage-test-time":
       await clickTestDate();
       break;
     case "unknown":
@@ -34,23 +35,6 @@ export default async function onManage() {
       break;
   }
 }
-
-function getManagedPage() {
-  if (document.querySelector("#confirm-booking-details")) return "view" as const;
-  else if (progress() == "Step 0: Test centre" && !exists("#search-results")) return "select-center" as const;
-  else if (progress() == "Step 0: Test centre" && exists("#search-results")) return "search-results" as const;
-  else if (progress() == "Step 1: Test time" && exists("#chosen-test-centre")) return "test-time" as const;
-  else return "unknown" as const;
-}
-
-function progress() {
-  return document.querySelector("#progress-bar").getAttribute("aria-valuetext");
-}
-
-function exists(query: string) {
-  return document.querySelector(query) !== null;
-}
-
 // returns an array of [date, link] tuples sorted by date
 function findTest() {
   const links = Array.from(document.querySelectorAll<HTMLAnchorElement>("a.test-centre-details-link")).filter((a) =>
