@@ -23,11 +23,9 @@ function patchManifest() {
       manifestData.permissions.push("offscreen");
       writeFileSync(manifestPath, JSON.stringify(manifestData, null, 2));
       console.log("Patched manifest.json with 'offscreen' permission.");
-    } else {
-      console.log("Manifest already has 'offscreen' permission.");
     }
   } else {
-    console.log("Manifest file not found.");
+    console.error("Manifest file not found.");
   }
 }
 

@@ -4,7 +4,7 @@ import InputGroup from "./components/input-group";
 import TextBox from "./components/textbox";
 import ToolTip from "./components/tooltip";
 import drivingLicenceExample from "@assets/img/driving-licence-sample.jpg";
-import { getYMD } from "@src/utils";
+import { getYMD } from "@src/logic/date";
 
 const Settings: Component = () => {
   return (

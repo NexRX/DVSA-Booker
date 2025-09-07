@@ -3,7 +3,7 @@ import Toggle from "./components/toggle";
 import InputGroup from "./components/input-group";
 import { state, setState } from "@src/state/solid";
 import Button from "./components/button";
-import { navigateTo } from "@src/utils";
+import { navigateTo } from "@src/logic/navigation";
 
 const Home: Component = () => {
   return (

@@ -1,0 +1,12 @@
+#Start(72966480)
+
+  We've found a bug for you!
+  C:\Users\Nex\Documents\Repos\DVSA-Booker\src\Demo.res:1:1-7
+
+  1 │ console.log("Hello, world!")
+  2 │ 
+
+  The value console can't be found
+
+FAILED: cannot make progress due to previous errors.
+#Done(72966518)

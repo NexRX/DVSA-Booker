@@ -1,9 +1,11 @@
-import { settings } from "@src/state";
+import { testDetails, config as Config } from "@src/state";
 import { ManageState } from "@src/state/search";
-import { click, simulateTyping, wait } from "@src/utils";
+import { click, simulateTyping, wait } from "@src/logic/simulate";
+import { waitUI } from ".";
 
 export default async function onManage(state: ManageState) {
-  const setting = await settings.get();
+  const details = await testDetails.get();
+  const config = await Config.get();
   await wait(100, 20);
 
   switch (state) {
@@ -11,7 +13,7 @@ export default async function onManage(state: ManageState) {
       click("test-centre-change");
       break;
     case "manage-select-center":
-      await simulateTyping("test-centres-input", setting.searchPostcode);
+      await simulateTyping("test-centres-input", details.searchPostcode);
       await wait(20);
       click("test-centres-submit");
       break;
@@ -23,7 +25,9 @@ export default async function onManage(state: ManageState) {
         click(link);
       } else {
         console.debug("No tests found");
-        await wait(8000);
+        // const [seconds, wait] = getWaitTime(config.timingRefresh, config.timingRandomizePercent);
+        // await wait(config.timingRefresh * 1000, config.timingRandomizePercent, true);
+        await waitUI();
         click("fetch-more-centres");
       }
       break;
@@ -53,7 +57,7 @@ function findTest() {
 
 export async function clickTestDate() {
   const bookableLinks = document.querySelectorAll<HTMLAnchorElement>("td.BookingCalendar-date--bookable a.BookingCalendar-dateLink");
-  const setting = await settings.get();
+  const setting = await testDetails.get();
 
   let [date, link] = Array.from(bookableLinks)
     .map((link) => {

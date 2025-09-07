@@ -1,10 +1,11 @@
 import { render } from "solid-js/web";
 import logo from "@assets/img/logo.png";
-import { createSignal, Show } from "solid-js";
+import { createSignal } from "solid-js";
 import { Tabs } from "./components/tabs";
+import { state } from "@src/state/solid";
 import Home from "./home";
 import Settings from "./settings";
-import { state } from "@src/state/solid";
+import Config from "./config";
 
 const appContainer = document.querySelector("#app-container");
 if (!appContainer) {
@@ -23,7 +24,8 @@ function Popup() {
       <Tabs
         tabs={[
           { label: "Home", content: <Home /> },
-          { label: "Settings", content: <Settings /> },
+          { label: "Test Details", content: <Settings /> },
+          { label: "Config", content: <Config /> },
         ]}
       />
       <footer class="text-center text-gray-500 text-xs">

@@ -1,7 +1,9 @@
 import { StorageItem } from "webext-storage";
-import { storage } from "./storage";
-import { state } from "./state";
-import { exists } from "@src/utils";
+import { storage } from "@src/state/storage";
+import { state } from "@src/state/state";
+import { exists } from "@src/logic/dom";
+
+export const SEARCH_KEY = "search";
 
 export type ManageState = "manage-view" | "manage-select-center" | "manage-search-results" | "manage-test-time" | "unknown";
 export type TSearch = {
@@ -18,7 +20,7 @@ const searchDefaultV0 = {
 
 export const initialSearch = searchDefaultV0;
 
-export const search = new StorageItem<TSearch>("search", {
+export const search = new StorageItem<TSearch>(SEARCH_KEY, {
   defaultValue: initialSearch,
   area: storage,
 });

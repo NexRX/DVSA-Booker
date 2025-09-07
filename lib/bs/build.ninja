@@ -1,0 +1,13 @@
+rescript = 1
+rule astj
+  command = "C:\Users\Nex\Documents\Repos\DVSA-Booker\node_modules\.pnpm\rescript@11.1.4\node_modules\rescript\win32\bsc.exe"  -bs-v 11.1.4 -bs-jsx 4 -bs-jsx-module solid-js -uncurried  -absname -bs-ast -o $out $i
+o src\Demo.ast : astj ..\..\src\Demo.res
+rule deps
+  command = "C:\Users\Nex\Documents\Repos\DVSA-Booker\node_modules\.pnpm\rescript@11.1.4\node_modules\rescript\win32\bsb_helper.exe" -hash c6750ded0211546f2cf470c10a59daed $in
+  restat = 1
+o src\Demo.d : deps src\Demo.ast
+rule mij
+  command = "C:\Users\Nex\Documents\Repos\DVSA-Booker\node_modules\.pnpm\rescript@11.1.4\node_modules\rescript\win32\bsc.exe" -I "src\assets\img" -I "src\assets\sounds" -I "src\assets" -I "src\pages\background" -I "src\pages\content" -I "src\pages\popup\components" -I "src\pages\popup" -I "src\pages" -I "src\state" -I "src\styles" -I src   -uncurried -bs-package-name dvsa-booker -bs-package-output esmodule:$in_d:.js $i
+  dyndep = 1
+  restat = 1
+o src\Demo.cmj src\Demo.cmi ..\..\src\Demo.js : mij src\Demo.ast

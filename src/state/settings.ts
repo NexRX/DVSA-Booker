@@ -1,36 +1,34 @@
 import { StorageItem } from "webext-storage";
 import { storage } from "./storage";
 
-export type TSettings = {
+const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000;
+export const TEST_DETAILS_KEY = "test-details";
+
+export type TTestDetails = {
   version: 0;
   driverLicence?: string;
   driverTestReference?: number;
   searchPostcode?: string;
   minDate?: number;
   maxDate?: number;
-  /** Interval seconds before refreshing after all centers loaded. */
-  timingRefresh: number;
-  /** Interval seconds between seeing more centers */
-  timingSeeMore: number;
-  /** Percentage to randomize timings to seem more human */
-  timingRandomizePercent: number;
+  // minTime?: number;
+  // maxTime?: number;
 };
 
-const settingsDefaultV0 = {
+const testDetailsDefaultV0 = {
   version: 0,
   driverLicence: undefined,
   driverTestReference: undefined,
   searchPostcode: undefined,
   minDate: Date.now(),
-  maxDate: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year from now
-  timingRefresh: 60,
-  timingSeeMore: 10,
-  timingRandomizePercent: 33,
+  maxDate: Date.now() + SIX_MONTHS_MS,
+  // minTime: undefined,
+  // maxTime: undefined,
 } as const;
 
-export const initialSettings = settingsDefaultV0;
+export const initialTestDetails = testDetailsDefaultV0;
 
-export const settings = new StorageItem<TSettings>("settings", {
-  defaultValue: initialSettings,
+export const testDetails = new StorageItem<TTestDetails>(TEST_DETAILS_KEY, {
+  defaultValue: initialTestDetails,
   area: storage,
 });
