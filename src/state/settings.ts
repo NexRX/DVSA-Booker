@@ -1,7 +1,7 @@
 import { StorageItem } from "webext-storage";
 import { storage } from "./storage";
 
-const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000;
+const SEVEN_MONTHS_MS = 7 * 30 * 24 * 60 * 60 * 1000;
 export const TEST_DETAILS_KEY = "test-details";
 
 export type TTestDetails = {
@@ -11,8 +11,15 @@ export type TTestDetails = {
   searchPostcode?: string;
   minDate?: number;
   maxDate?: number;
-  // minTime?: number;
-  // maxTime?: number;
+  allowMonday?: boolean;
+  allowTuesday?: boolean;
+  allowWednesday?: boolean;
+  allowThursday?: boolean;
+  allowFriday?: boolean;
+  allowSaturday?: boolean;
+  allowSunday?: boolean;
+  minHour?: number;
+  maxHour?: number;
 };
 
 const testDetailsDefaultV0 = {
@@ -21,9 +28,16 @@ const testDetailsDefaultV0 = {
   driverTestReference: undefined,
   searchPostcode: undefined,
   minDate: Date.now(),
-  maxDate: Date.now() + SIX_MONTHS_MS,
-  // minTime: undefined,
-  // maxTime: undefined,
+  maxDate: Date.now() + SEVEN_MONTHS_MS,
+  allowMonday: true,
+  allowTuesday: true,
+  allowWednesday: true,
+  allowThursday: true,
+  allowFriday: true,
+  allowSaturday: true,
+  allowSunday: true,
+  minHour: undefined,
+  maxHour: undefined,
 } as const;
 
 export const initialTestDetails = testDetailsDefaultV0;

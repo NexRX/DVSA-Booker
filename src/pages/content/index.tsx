@@ -11,6 +11,7 @@ import warn from "@assets/sounds/warn.mp3";
 import styles from "@src/styles/index.css?url";
 import Button from "../popup/components/button";
 import Config from "../popup/config";
+import { navigateTo } from "@src/logic/navigation";
 
 const [waiting, setWaiting] = createSignal<number | undefined>(undefined);
 const [waitingPause, setWaitingPause] = createSignal<boolean>(false);
@@ -28,13 +29,18 @@ async function main() {
     else {
       console.log("Error", "Unknown page returning to homepage in 65 seconds: ", state);
       play(warn, false);
-      // setTimeout(() => navigateTo("login"), 65);
+      await waitUI(60, false);
+      navigateTo("login");
     }
   }
 }
 
-export async function waitUI() {
-  const { timingRefresh, timingRandomizePercent } = await configState.get();
+/* Wait for a specified number of seconds displaying it to the user, if no args given waits based on user configuration */
+export async function waitUI(waitSeconds?: number, randomize: boolean = true) {
+  let { timingRefresh, timingRandomizePercent } = await configState.get();
+  if (waitSeconds) timingRefresh = waitSeconds;
+  if (!randomize) timingRandomizePercent = 0;
+
   setWaiting(randomVariation(timingRefresh, timingRandomizePercent));
   setWaitingPause(false);
 

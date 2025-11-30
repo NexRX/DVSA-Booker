@@ -1,4 +1,4 @@
-import { Component, JSX } from "solid-js";
+import { Component, For, JSX } from "solid-js";
 import { settings, setSettings } from "@src/state/solid";
 import InputGroup from "./components/input-group";
 import TextBox from "./components/textbox";
@@ -43,6 +43,25 @@ const Settings: Component = () => {
           dateOnly
           setter={(value) => setSettings({ ...settings(), maxDate: new Date(value).getTime() })}
         />
+      </InputGroup>
+      <InputGroup name="Days of Week">
+        <ToolTip>Select the days of the week you want to include in your search.</ToolTip>
+        <div class="flex flex-wrap gap-2 max-w-52">
+          <For each={["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}>
+            {(day) => (
+              <label class="flex items-center gap-1" id={`allow-day-${day}`}>
+                <input
+                  type="checkbox"
+                  checked={settings()[`allow${day}`] ?? false}
+                  onChange={(e) => {
+                    setSettings({ ...settings(), [`allow${day}`]: e.currentTarget.checked });
+                  }}
+                />
+                {day}
+              </label>
+            )}
+          </For>
+        </div>
       </InputGroup>
     </div>
   );
