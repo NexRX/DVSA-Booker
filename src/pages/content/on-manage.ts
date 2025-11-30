@@ -1,8 +1,9 @@
-import { testDetails, config as Config, TTestDetails } from "@src/state";
+import { testDetails, getDaysAllowedNumberArray, config as Config, TTestDetails, state as appState } from "@src/state";
 import { ManageState } from "@src/state/search";
 import { click, simulateTyping, wait } from "@src/logic/simulate";
 import { waitUI } from ".";
 import { sortSoonestDateElement, sortSoonestDate, parseTestDateTime } from "@src/logic/date";
+import { findConfirmationTestDates, findConfirmationTestLocations, findBookingDetail } from "./on-manage-helpers";
 
 export default async function onManage(state: ManageState) {
   const details = await testDetails.get();
@@ -11,6 +12,10 @@ export default async function onManage(state: ManageState) {
 
   switch (state) {
     case "manage-view":
+      let currentTestDate = parseTestDateTime(findBookingDetail("Last date to change or cancel", "backward").innerText);
+      const currentTestLocation = findBookingDetail("Test centre", "h2>dd").innerText;
+      appState.set({ ...(await appState.get()), currentTestDate: currentTestDate.getTime(), currentTestLocation });
+
       click("test-centre-change");
       break;
     case "manage-select-center":
@@ -19,7 +24,7 @@ export default async function onManage(state: ManageState) {
       click("test-centres-submit");
       break;
     case "manage-search-results":
-      const testLinks = findTest(details);
+      const testLinks = await findTest(details);
       if (testLinks.length > 0) {
         const [date, link] = testLinks[0];
         console.debug("Found test!", date);
@@ -49,8 +54,14 @@ export default async function onManage(state: ManageState) {
       break;
   }
 }
+
+function findCurrentTestDetails() {
+  const details = findConfirmationTestDates();
+  console.log("details", details);
+}
+
 // returns an array of [date, link] tuples sorted by date
-function findTest(details: TTestDetails) {
+async function findTest(details: TTestDetails) {
   const links = Array.from(document.querySelectorAll<HTMLAnchorElement>("a.test-centre-details-link")).filter((a) =>
     a.innerText.includes("available tests around")
   );
@@ -67,12 +78,16 @@ function findTest(details: TTestDetails) {
   console.debug("Found test links and attempting sort:", dateLinks);
   const sortedDateLinks = dateLinks.filter(([date]) => date !== null).sort(sortSoonestDateElement);
 
-  console.debug("Parsing min and max test dates", details.minDate, details.maxDate);
+  // Filter out dates outside the range
   const min = new Date(details.minDate);
   const max = new Date(details.maxDate);
-  console.debug("Parsed min and max test dates", min, max);
+  // filter out days of the week that are not available (Monday, friday, etc)
+  const allowed = await getDaysAllowedNumberArray();
 
-  const filteredDateLinks = sortedDateLinks.filter(([date]) => date >= min && date <= max);
+  const filteredDateLinks = sortedDateLinks
+    .filter(([date]) => date >= min && date <= max) // Filter out dates outside the range
+    .filter(([date]) => allowed.includes(date.getDay())); // filter out days of the week that are not available (Monday, friday, etc)
+
   console.debug("Filtered date links", filteredDateLinks);
   return filteredDateLinks;
 }
@@ -128,117 +143,25 @@ async function clickTestTime() {
   click(input);
 }
 
-function findConfirmationTestDates() {
-  const detailsSection = document.getElementById("confirm-booking-details");
-  if (!detailsSection) {
-    console.warn("Could not find confirm-booking-details section");
-    return;
-  }
-
-  // Find the <dt> with text "Date and time of test" and its corresponding <dd>
-  const dt = detailsSection.querySelector("dt");
-  let targetDD: HTMLElement | null = null;
-
-  if (dt && dt.textContent?.trim() === "Date and time of test") {
-    let next = dt.nextElementSibling;
-    while (next) {
-      if (next.tagName.toLowerCase() === "dd") {
-        targetDD = next as HTMLElement;
-        break;
-      }
-      next = next.nextElementSibling;
-    }
-  } else {
-    // If not found directly, search all dt elements
-    const dtElements = detailsSection.querySelectorAll("dt");
-    for (const dtElem of dtElements) {
-      if (dtElem.textContent?.trim() === "Date and time of test") {
-        let next = dtElem.nextElementSibling;
-        while (next) {
-          if (next.tagName.toLowerCase() === "dd") {
-            targetDD = next as HTMLElement;
-            break;
-          }
-          next = next.nextElementSibling;
-        }
-        if (targetDD) break;
-      }
-    }
-  }
-
-  if (!targetDD) {
-    console.warn("Could not find section with 'Date and time of test'");
-    return null;
-  }
-
-  const rawHtml = targetDD.innerHTML;
-  const newDatetimeMatch = rawHtml.match(/^([^<]+)<br/i);
-  const newTestDate = parseTestDateTime(newDatetimeMatch ? newDatetimeMatch[1].trim() : null);
-  const oldDatetimeMatch = rawHtml.match(/\[was ([^\]]+)\]/i);
-  const oldTestDate = parseTestDateTime(oldDatetimeMatch ? oldDatetimeMatch[1].trim() : null);
-  return { newTestDate, oldTestDate };
-}
-
-function findConfirmationTestLocations() {
-  const detailsSection = document.getElementById("confirm-booking-details");
-  if (!detailsSection) {
-    console.warn("Could not find confirm-booking-details section");
-    return;
-  }
-
-  // Find the <dt> with text "Date and time of test" and its corresponding <dd>
-  const dt = detailsSection.querySelector("dt");
-  let targetDD: HTMLElement | null = null;
-
-  if (dt && dt.textContent?.trim() === "Test centre") {
-    let next = dt.nextElementSibling;
-    while (next) {
-      if (next.tagName.toLowerCase() === "dd") {
-        targetDD = next as HTMLElement;
-        break;
-      }
-      next = next.nextElementSibling;
-    }
-  } else {
-    // If not found directly, search all dt elements
-    const dtElements = detailsSection.querySelectorAll("dt");
-    for (const dtElem of dtElements) {
-      if (dtElem.textContent?.trim() === "Driving test centre") {
-        let next = dtElem.nextElementSibling;
-        while (next) {
-          if (next.tagName.toLowerCase() === "dd") {
-            targetDD = next as HTMLElement;
-            break;
-          }
-          next = next.nextElementSibling;
-        }
-        if (targetDD) break;
-      }
-    }
-  }
-
-  if (!targetDD) {
-    console.warn("Could not find section with 'Test centre'");
-    return null;
-  }
-
-  const rawHtml = targetDD.innerHTML;
-  console.log("Raw HTML: ", rawHtml);
-
-  // Parse new location: trim and get everything before <br>
-  const newLocationMatch = rawHtml.match(/^([\s\S]*?)<br/i);
-  const newLocation = newLocationMatch ? newLocationMatch[1].trim() : null;
-
-  // Parse old location: match [was ...]
-  const oldLocationMatch = rawHtml.match(/\[was ([^\]]+)\]/i);
-  const oldLocation = oldLocationMatch ? oldLocationMatch[1].trim() : null;
-
-  return { newLocation, oldLocation };
-}
-
 async function confirmIfConfigurationAllows() {
   const { newTestDate, oldTestDate } = findConfirmationTestDates();
   const { newLocation, oldLocation } = findConfirmationTestLocations();
 
-  console.log("Test confirmation details:", { newTestDate, oldTestDate, newLocation, oldLocation });
+  const details = await testDetails.get();
+  const isSooner = newTestDate < oldTestDate;
+  const isWithinMinMaxDates = newTestDate >= new Date(details.minDate) && newTestDate <= new Date(details.maxDate);
+  const isAllowedDayOfWeek = (await getDaysAllowedNumberArray()).includes(newTestDate.getDay());
+
+  console.log(
+    "Test confirmation details:",
+    { newTestDate, oldTestDate, newLocation, oldLocation },
+    { isSooner, isWithinMinMaxDates, isAllowedDayOfWeek }
+  );
 }
+
+// function isValidTestCandidate() {
+//   const details = await testDetails.get();
+//   const isSooner = newTestDate < oldTestDate;
+//   const isWithinMinMaxDates = newTestDate >= new Date(details.minDate) && newTestDate <= new Date(details.maxDate);
+//   const isAllowedDayOfWeek = (await getDaysAllowedNumberArray()).includes(newTestDate.getDay());
+// }

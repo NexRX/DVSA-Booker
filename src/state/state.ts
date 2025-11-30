@@ -6,11 +6,15 @@ export const STATE_KEY = "state";
 export type TState = {
   version: 0;
   enabled: boolean;
+  currentTestDate?: number;
+  currentTestLocation?: string;
 };
 
 const initialStateV0 = {
   version: 0,
   enabled: true,
+  currentTestDate: undefined,
+  currentTestLocation: undefined,
 } as const;
 
 export const initialState = initialStateV0;

@@ -8,7 +8,7 @@ import { getYMD } from "@src/logic/date";
 
 const Settings: Component = () => {
   return (
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-4 w-full">
       <InputGroup name="Drivers Licence">
         <ToolTip>
           This is on the front of your drivers licence, e.g. MORGA657054SM9IJ

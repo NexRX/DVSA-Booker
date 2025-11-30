@@ -46,3 +46,18 @@ export const testDetails = new StorageItem<TTestDetails>(TEST_DETAILS_KEY, {
   defaultValue: initialTestDetails,
   area: storage,
 });
+
+export async function getDaysAllowedNumberArray() {
+  const details = await testDetails.get();
+  const daysAllowed = [
+    details.allowSunday ? 0 : null,
+    details.allowMonday ? 1 : null,
+    details.allowTuesday ? 2 : null,
+    details.allowWednesday ? 3 : null,
+    details.allowThursday ? 4 : null,
+    details.allowFriday ? 5 : null,
+    details.allowSaturday ? 6 : null,
+  ].filter((day) => day !== null);
+
+  return daysAllowed;
+}

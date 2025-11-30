@@ -8,7 +8,7 @@ import { getYMD } from "@src/logic/date";
 
 const Config: Component = () => {
   return (
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-4 w-full">
       <InputGroup name="Refresh Timing">
         <ToolTip>Number of seconds before refreshing after all test centers have been searched.</ToolTip>
         <TextBox value={config().timingRefresh} numbersOnly setter={(value) => setConfig({ ...config(), timingRefresh: Number(value) })} />
