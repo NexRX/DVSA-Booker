@@ -1,5 +1,7 @@
 import { testDetails, getDaysAllowedNumberArray, config as Config, TTestDetails } from "@src/state";
 import { parseTestDateTime } from "@src/logic/date";
+import { navigateTo } from "@src/logic/navigation";
+import { setMessage } from ".";
 
 // Helper to find the <dd> for a given <dt> label in #confirm-booking-details
 export function findBookingDetail(
@@ -92,4 +94,9 @@ export async function confirmIfConfigurationAllows() {
   const isValid = await isValidTestDate(newTestDate, details);
 
   console.log("Test confirmation details:", { newTestDate, oldTestDate, newLocation, oldLocation }, { isSooner, isValid });
+}
+
+export function fallbackAfterAwhile() {
+  setTimeout(() => navigateTo("login"), 1000 + 60 * 3);
+  setMessage("Will auto retry if we havent navigated in 3 minutes");
 }

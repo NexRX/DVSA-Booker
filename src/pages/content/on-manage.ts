@@ -3,7 +3,7 @@ import { ManageState } from "@src/state/search";
 import { click, simulateTyping, wait } from "@src/logic/simulate";
 import { setMessage, waitUI } from ".";
 import { sortSoonestDateElement, sortSoonestDate, sortSoonestDateNamed, parseTestDateTime } from "@src/logic/date";
-import { findConfirmationTestDates, findConfirmationTestLocations, findBookingDetail } from "./on-manage-helpers";
+import { findConfirmationTestDates, findConfirmationTestLocations, findBookingDetail, fallbackAfterAwhile } from "./on-manage-helpers";
 import { navigateTo } from "@src/logic/navigation";
 import { play } from "../background/exports";
 import success from "@assets/sounds/success.mp3";
@@ -11,7 +11,6 @@ import warn from "@assets/sounds/warn.mp3";
 
 export default async function onManage(state: ManageState) {
   const details = await testDetails.get();
-  const config = await Config.get();
   await wait(100, 20);
 
   switch (state) {
@@ -26,26 +25,26 @@ export default async function onManage(state: ManageState) {
       await simulateTyping("test-centres-input", details.searchPostcode);
       await wait(20);
       click("test-centres-submit");
-      setTimeout(() => navigateTo("login"), 1000 + 60 * 3);
-      setMessage("Will auto retry if we havent navigated in 3 minutes");
+      fallbackAfterAwhile();
       break;
     case "manage-search-results":
       const testLinks = await findTest(details);
       if (testLinks.length > 0) {
-        const [date, link] = testLinks[0];
-        setMessage("Found test!");
+        const [_date, link, name] = testLinks[0];
+        setMessage("Found test at " + name);
+        play("success", false);
         click(link);
       } else {
         setMessage("No tests found, trying again soon");
         await waitUI();
         click("fetch-more-centres");
       }
-      setTimeout(() => navigateTo("login"), 1000 + 60 * 3);
-      setMessage("Will auto retry if we havent navigated in 3 minutes");
+      fallbackAfterAwhile();
       break;
     case "manage-test-time":
       if ((await clickTestDate()) && (await clickTestTime())) {
-        setMessage("Test date & time found!");
+        play("success", false);
+        setMessage("Test date & time still available!");
         click("slot-chosen-submit");
         click("slot-warning-continue");
         break;
@@ -55,8 +54,8 @@ export default async function onManage(state: ManageState) {
       navigateTo("login");
       break;
     case "manage-confirm-who-are-you":
-      setTimeout(() => navigateTo("login"), 1000 + 60 * 3);
-      setMessage("Will auto retry if we havent navigated in 3 minutes");
+      fallbackAfterAwhile();
+      play("success", false);
       click("i-am-candidate");
       break;
     case "manage-confirm-changes-final":
@@ -73,7 +72,7 @@ export default async function onManage(state: ManageState) {
       }
       break;
     case "unknown":
-      console.error("Unknown page");
+      fallbackAfterAwhile();
       break;
   }
 }
