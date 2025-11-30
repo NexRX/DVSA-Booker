@@ -44,6 +44,16 @@ const Settings: Component = () => {
           setter={(value) => setSettings({ ...settings(), maxDate: new Date(value).getTime() })}
         />
       </InputGroup>
+      <InputGroup name="Test Centers">
+        <ToolTip>
+          Comma-separated list of test center names. Names are case insensitive and only has to match the beginning of the center name i.e.
+          'isle' matches 'Isleworth (Fleming Way)'.
+        </ToolTip>
+        <TextBox
+          value={settings().allowedLocations?.join(",")}
+          setter={(value) => setSettings({ ...settings(), allowedLocations: value.split(",").map((loc) => loc.trim()) })}
+        />
+      </InputGroup>
       <InputGroup name="Days of Week">
         <ToolTip>Select the days of the week you want to include in your search.</ToolTip>
         <div class="flex flex-wrap gap-2 max-w-52">

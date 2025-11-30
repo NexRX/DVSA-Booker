@@ -14,6 +14,7 @@ import Config from "../popup/config";
 import { navigateTo } from "@src/logic/navigation";
 
 const [waiting, setWaiting] = createSignal<number | undefined>(undefined);
+export const [message, setMessage] = createSignal<string | undefined>(undefined);
 const [waitingPause, setWaitingPause] = createSignal<boolean>(false);
 
 async function main() {
@@ -80,11 +81,12 @@ export async function waitUI(waitSeconds?: number, randomize: boolean = true) {
 
 function renderUI() {
   const App: Component = () => (
-    <div class="fixed bottom-8 left-8 bg-slate-700/50 p-4 rounded-md">
-      <h3>DVSA Test Booker</h3>
-      <p>State: {search().state}</p>
+    <div class="!fixed !bottom-8 !left-8 !bg-slate-700/70 !p-4 !rounded-md !max-w-96">
+      <h3 class="text-white border border-black p-1 rounded">DVSA Test Booker</h3>
+      <p class="text-white border border-black p-1 rounded">State: {search().state}</p>
+      <p class="text-white border border-black p-1 rounded">Message: {message() ?? "continuing..."}</p>
       <Show when={waiting()}>
-        <p>Waiting before continuing: {Math.floor(waiting() ?? 0)}</p>
+        <p class="text-white border border-black p-1 rounded">Waiting before continuing: {Math.floor(waiting() ?? 0)}</p>
         <Switch>
           <Match when={waitingPause() === false}>
             <Button onClick={() => setWaitingPause(true)}>Pause</Button>

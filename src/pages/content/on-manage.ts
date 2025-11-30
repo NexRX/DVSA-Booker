@@ -1,9 +1,13 @@
 import { testDetails, getDaysAllowedNumberArray, config as Config, TTestDetails, state as appState } from "@src/state";
 import { ManageState } from "@src/state/search";
 import { click, simulateTyping, wait } from "@src/logic/simulate";
-import { waitUI } from ".";
-import { sortSoonestDateElement, sortSoonestDate, parseTestDateTime } from "@src/logic/date";
+import { setMessage, waitUI } from ".";
+import { sortSoonestDateElement, sortSoonestDate, sortSoonestDateNamed, parseTestDateTime } from "@src/logic/date";
 import { findConfirmationTestDates, findConfirmationTestLocations, findBookingDetail } from "./on-manage-helpers";
+import { navigateTo } from "@src/logic/navigation";
+import { play } from "../background/exports";
+import success from "@assets/sounds/success.mp3";
+import warn from "@assets/sounds/warn.mp3";
 
 export default async function onManage(state: ManageState) {
   const details = await testDetails.get();
@@ -22,32 +26,51 @@ export default async function onManage(state: ManageState) {
       await simulateTyping("test-centres-input", details.searchPostcode);
       await wait(20);
       click("test-centres-submit");
+      setTimeout(() => navigateTo("login"), 1000 + 60 * 3);
+      setMessage("Will auto retry if we havent navigated in 3 minutes");
       break;
     case "manage-search-results":
       const testLinks = await findTest(details);
       if (testLinks.length > 0) {
         const [date, link] = testLinks[0];
-        console.debug("Found test!", date);
+        setMessage("Found test!");
         click(link);
       } else {
-        console.debug("No tests found");
-        // const [seconds, wait] = getWaitTime(config.timingRefresh, config.timingRandomizePercent);
-        // await wait(config.timingRefresh * 1000, config.timingRandomizePercent, true);
+        setMessage("No tests found, trying again soon");
         await waitUI();
         click("fetch-more-centres");
       }
+      setTimeout(() => navigateTo("login"), 1000 + 60 * 3);
+      setMessage("Will auto retry if we havent navigated in 3 minutes");
       break;
     case "manage-test-time":
-      await clickTestDate();
-      await clickTestTime();
-      click("slot-chosen-submit");
-      click("slot-warning-continue");
+      if ((await clickTestDate()) && (await clickTestTime())) {
+        setMessage("Test date & time found!");
+        click("slot-chosen-submit");
+        click("slot-warning-continue");
+        break;
+      }
+      setMessage("Test date & time was taken before we could confirm");
+      await waitUI(60, false);
+      navigateTo("login");
       break;
     case "manage-confirm-who-are-you":
+      setTimeout(() => navigateTo("login"), 1000 + 60 * 3);
+      setMessage("Will auto retry if we havent navigated in 3 minutes");
       click("i-am-candidate");
       break;
     case "manage-confirm-changes-final":
-      confirmIfConfigurationAllows();
+      if (isConfirmtionTestCenterQualifies()) {
+        play(success, true);
+        setMessage("Test center matches! Press confirm or cancel, in 9 minutes we will auto confirm");
+        await waitUI(60 * 9, false);
+        navigateTo("login");
+      } else {
+        play(warn, true);
+        setMessage("Found a test center but it doesn't qualify, retrying again in 2 minutes");
+        await waitUI(60 * 2, false);
+        navigateTo("login");
+      }
       break;
     case "unknown":
       console.error("Unknown page");
@@ -67,26 +90,32 @@ async function findTest(details: TTestDetails) {
   );
 
   const dateLinks = links.map((link) => {
+    const name = (link.querySelector(".test-centre-details > span > h4") as HTMLElement | null)?.innerText;
     const match = link.innerText.match(/\d{2}\/\d{2}\/\d{4}/); // Regular expression to match dates in DD/MM/YYYY format
     if (!match) return null;
     // Parse date in dd/mm/yyyy format
     const [day, month, year] = match[0].split("/").map(Number);
     const date = new Date(year, month - 1, day);
-    return [date, link] as const;
+    return [date, link, name] as const;
   });
 
   console.debug("Found test links and attempting sort:", dateLinks);
-  const sortedDateLinks = dateLinks.filter(([date]) => date !== null).sort(sortSoonestDateElement);
+  const sortedDateLinks = dateLinks.filter(([date]) => date !== null).sort(sortSoonestDateNamed);
 
-  // Filter out dates outside the range
+  // Dates outside the range
   const min = new Date(details.minDate);
   const max = new Date(details.maxDate);
-  // filter out days of the week that are not available (Monday, friday, etc)
-  const allowed = await getDaysAllowedNumberArray();
+  // Days of the week that are not available (Monday, friday, etc)
+  const allowedDays = await getDaysAllowedNumberArray();
+  // Allowed test centers (should match case insensitive & starts with)
+  const allowedCenters = (await details.allowedLocations) ?? [];
 
   const filteredDateLinks = sortedDateLinks
     .filter(([date]) => date >= min && date <= max) // Filter out dates outside the range
-    .filter(([date]) => allowed.includes(date.getDay())); // filter out days of the week that are not available (Monday, friday, etc)
+    .filter(([date]) => allowedDays.includes(date.getDay())) // filter out days of the week that are not available (Monday, friday, etc)
+    .filter(
+      ([_, __, name]) => allowedCenters.length === 0 || allowedCenters.some((center) => name.toLowerCase().startsWith(center.toLowerCase()))
+    ); // Filter allowed test centers (should match case insensitive & starts with)
 
   console.debug("Filtered date links", filteredDateLinks);
   return filteredDateLinks;
@@ -112,11 +141,12 @@ export async function clickTestDate() {
 
   if (sortedFilteredLinks.length === 0) {
     console.warn("No bookable links found within the specified date range");
-    return;
+    return false;
   }
   const [date, link] = sortedFilteredLinks[0];
   console.log("Clicking link:", link, date);
   click(link);
+  return true;
 }
 
 async function clickTestTime() {
@@ -135,28 +165,34 @@ async function clickTestTime() {
 
   if (parsedTimeLinks.length === 0) {
     console.warn("No time links found");
-    return;
+    return false;
   }
 
   const [time, input] = parsedTimeLinks[0];
   console.log("Clicking time input:", input, time);
   click(input);
+  return true;
 }
 
-async function confirmIfConfigurationAllows() {
+async function isConfirmtionTestCenterQualifies() {
   const { newTestDate, oldTestDate } = findConfirmationTestDates();
   const { newLocation, oldLocation } = findConfirmationTestLocations();
+  const allowedCenters = (await testDetails.get()).allowedLocations ?? [];
 
   const details = await testDetails.get();
   const isSooner = newTestDate < oldTestDate;
   const isWithinMinMaxDates = newTestDate >= new Date(details.minDate) && newTestDate <= new Date(details.maxDate);
   const isAllowedDayOfWeek = (await getDaysAllowedNumberArray()).includes(newTestDate.getDay());
+  const isAllowedCenter =
+    allowedCenters.length === 0 || allowedCenters.some((center) => newLocation.toLowerCase().startsWith(center.toLowerCase()));
 
   console.log(
     "Test confirmation details:",
     { newTestDate, oldTestDate, newLocation, oldLocation },
-    { isSooner, isWithinMinMaxDates, isAllowedDayOfWeek }
+    { isSooner, isWithinMinMaxDates, isAllowedDayOfWeek, isAllowedCenter }
   );
+
+  return isSooner && isWithinMinMaxDates && isAllowedDayOfWeek && isAllowedCenter;
 }
 
 // function isValidTestCandidate() {

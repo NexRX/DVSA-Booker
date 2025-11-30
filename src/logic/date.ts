@@ -24,6 +24,10 @@ export function sortSoonestDateElement(a: readonly [Date, HTMLElement], b: reado
   return sortSoonestDate(a[0], b[0]);
 }
 
+export function sortSoonestDateNamed(a: readonly [Date, HTMLElement, string], b: readonly [Date, HTMLElement, string]): number {
+  return sortSoonestDate(a[0], b[0]);
+}
+
 /** Sort by date first, then by time  */
 export function sortSoonestDate(dateA: Date, dateB: Date): number {
   if (dateA.toDateString() === dateB.toDateString()) {

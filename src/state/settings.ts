@@ -11,6 +11,7 @@ export type TTestDetails = {
   searchPostcode?: string;
   minDate?: number;
   maxDate?: number;
+  allowedLocations?: string[];
   allowMonday?: boolean;
   allowTuesday?: boolean;
   allowWednesday?: boolean;
@@ -29,6 +30,7 @@ const testDetailsDefaultV0 = {
   searchPostcode: undefined,
   minDate: Date.now(),
   maxDate: Date.now() + SEVEN_MONTHS_MS,
+  allowedLocations: undefined,
   allowMonday: true,
   allowTuesday: true,
   allowWednesday: true,

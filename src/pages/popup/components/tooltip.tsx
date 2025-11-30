@@ -65,7 +65,7 @@ export default function ToolTip(props: ToolTipProps) {
       {hovered() && (
         <div
           ref={tooltipRef}
-          class={`absolute z-10 bottom-full mb-2 px-3 py-2 rounded bg-gray-800 text-white text-xs shadow-lg whitespace-normal break-words border border-slate-600/65 ${maxWidthClass}
+          class={`absolute z-10 bottom-full mb-2 px-3 py-2 rounded bg-gray-800 text-white text-xs shadow-lg whitespace-normal break-words border border-slate-600/65 min-w-28 ${maxWidthClass}
             ${position() === "center" ? "left-1/2 -translate-x-1/2" : position() === "left" ? "left-0" : "right-0"}
           `}
           style={safeWidth() ? { width: safeWidth() } : undefined}
