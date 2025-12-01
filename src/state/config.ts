@@ -17,10 +17,10 @@ export type TConfig = {
 
 const configDefaultV0 = {
   version: 0,
-  timingRefresh: 60,
-  timingSeeMore: 10,
+  timingRefresh: 300,
+  timingSeeMore: 45,
   timingRandomizePercent: 33,
-  showCentersMax: undefined,
+  showCentersMax: 12,
 } as const;
 
 export const initialConfig = configDefaultV0;

@@ -97,6 +97,11 @@ export async function confirmIfConfigurationAllows() {
 }
 
 export function fallbackAfterAwhile() {
-  setTimeout(() => navigateTo("login"), 1000 + 60 * 3);
+  const THREE_MINUTES_IN_MS = 1000 * 60 * 3;
+  setTimeout(() => navigateTo("login"), THREE_MINUTES_IN_MS);
   setMessage("Will auto retry if we havent navigated in 3 minutes");
+}
+
+export function testCentersDisplayed() {
+  return document.querySelectorAll(".test-centre-results > li").length;
 }

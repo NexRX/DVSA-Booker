@@ -25,7 +25,7 @@ function Popup() {
         tabs={[
           { label: "Home", content: <Home /> },
           { label: "Test Details", content: <Settings /> },
-          { label: "Config", content: <Config /> },
+          { label: "Search Config", content: <Config /> },
         ]}
       />
       <footer class="text-center text-gray-500 text-xs">

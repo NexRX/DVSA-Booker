@@ -2,8 +2,14 @@ import { testDetails, getDaysAllowedNumberArray, config as Config, TTestDetails,
 import { ManageState } from "@src/state/search";
 import { click, simulateTyping, wait } from "@src/logic/simulate";
 import { setMessage, waitUI } from ".";
-import { sortSoonestDateElement, sortSoonestDate, sortSoonestDateNamed, parseTestDateTime } from "@src/logic/date";
-import { findConfirmationTestDates, findConfirmationTestLocations, findBookingDetail, fallbackAfterAwhile } from "./on-manage-helpers";
+import { sortSoonestDateElement, sortSoonestDateNamed, parseTestDateTime } from "@src/logic/date";
+import {
+  findConfirmationTestDates,
+  findConfirmationTestLocations,
+  findBookingDetail,
+  fallbackAfterAwhile,
+  testCentersDisplayed,
+} from "./on-manage-helpers";
 import { navigateTo } from "@src/logic/navigation";
 import { play } from "../background/exports";
 import success from "@assets/sounds/success.mp3";
@@ -11,6 +17,7 @@ import warn from "@assets/sounds/warn.mp3";
 
 export default async function onManage(state: ManageState) {
   const details = await testDetails.get();
+  const config = await Config.get();
   await wait(100, 20);
 
   switch (state) {
@@ -23,7 +30,7 @@ export default async function onManage(state: ManageState) {
       break;
     case "manage-select-center":
       await simulateTyping("test-centres-input", details.searchPostcode);
-      await wait(20);
+      await wait(250);
       click("test-centres-submit");
       fallbackAfterAwhile();
       break;
@@ -36,8 +43,15 @@ export default async function onManage(state: ManageState) {
         click(link);
       } else {
         setMessage("No tests found, trying again soon");
-        await waitUI();
-        click("fetch-more-centres");
+        if (testCentersDisplayed() < config.showCentersMax) {
+          setMessage("Searching for more centers momentarily");
+          await waitUI(config.timingSeeMore);
+          click("fetch-more-centres");
+        } else {
+          setMessage("Max centers reached, restarting search momentarily");
+          await waitUI();
+          click("test-centres-submit");
+        }
       }
       fallbackAfterAwhile();
       break;

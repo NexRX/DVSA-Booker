@@ -13,6 +13,10 @@ const Config: Component = () => {
         <ToolTip>Number of seconds before refreshing after all test centers have been searched.</ToolTip>
         <TextBox value={config().timingRefresh} numbersOnly setter={(value) => setConfig({ ...config(), timingRefresh: Number(value) })} />
       </InputGroup>
+      <InputGroup name="See More Timing">
+        <ToolTip>Number of seconds before expanding search to more test centers.</ToolTip>
+        <TextBox value={config().timingSeeMore} numbersOnly setter={(value) => setConfig({ ...config(), timingSeeMore: Number(value) })} />
+      </InputGroup>
       <InputGroup name="Timing Randomizer">
         <ToolTip>Percentage number (0-100) of seconds before taking certain actions, helps to appear more human.</ToolTip>
         <TextBox
@@ -23,6 +27,14 @@ const Config: Component = () => {
             if (!Number.isNaN(timingRandomizePercent) && timingRandomizePercent >= 0 && timingRandomizePercent <= 100)
               setConfig({ ...config(), timingRandomizePercent });
           }}
+        />
+      </InputGroup>
+      <InputGroup name="Max Test Centers">
+        <ToolTip>Number of test centers to display before fully restarting search.</ToolTip>
+        <TextBox
+          value={config().showCentersMax}
+          numbersOnly
+          setter={(value) => setConfig({ ...config(), showCentersMax: Number(value) })}
         />
       </InputGroup>
     </div>
