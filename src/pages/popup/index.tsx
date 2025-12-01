@@ -6,6 +6,7 @@ import { state } from "@src/state/solid";
 import Home from "./home";
 import Settings from "./settings";
 import Config from "./config";
+import { Security } from "./security";
 
 const appContainer = document.querySelector("#app-container");
 if (!appContainer) {
@@ -26,6 +27,7 @@ function Popup() {
           { label: "Home", content: <Home /> },
           { label: "Test Details", content: <Settings /> },
           { label: "Search Config", content: <Config /> },
+          { label: "Security", content: <Security /> },
         ]}
       />
       <footer class="text-center text-gray-500 text-xs">

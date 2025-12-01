@@ -4,14 +4,17 @@ import {
   TTestDetails,
   TSearch,
   TConfig,
+  TSecurity,
   TEST_DETAILS_KEY,
   STATE_KEY,
   SEARCH_KEY,
   CONFIG_KEY,
+  SECURITY_KEY,
   initialState,
   initialTestDetails,
   initialSearch,
   initialConfig,
+  initialSecurity,
 } from "@src/state";
 import { createStorageSignal } from "./storage";
 
@@ -19,3 +22,4 @@ export const [state, setState] = createStorageSignal<TState>(STATE_KEY, initialS
 export const [settings, setSettings] = createStorageSignal<TTestDetails>(TEST_DETAILS_KEY, initialTestDetails);
 export const [search, setSearch] = createStorageSignal<TSearch>(SEARCH_KEY, initialSearch);
 export const [config, setConfig] = createStorageSignal<TConfig>(CONFIG_KEY, initialConfig);
+export const [securityState, setSecurityState] = createStorageSignal<TSecurity>(SECURITY_KEY, initialSecurity);
