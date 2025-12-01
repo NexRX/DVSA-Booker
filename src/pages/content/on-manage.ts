@@ -186,7 +186,7 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
       ctx.setMessage(`Qualified test found! You have ${MINUTES} minutes before auto-return.`);
       console.log(document.getElementById("abandon"), document.getElementById("abandon-changes"));
       await ctx.waitUI(60 * MINUTES, false);
-      // TODO: When we find a test we actually want, change this to click("confirm")
+      // TODO: When we find a test we actually want, change this to click("confirm") and shotern to 14.5 minutes
       click("abandon");
     } else {
       ctx.play(warnSound, true);
