@@ -1,5 +1,9 @@
 # DVSA Test Booker 🚗📅
 
+![](https://img.shields.io/badge/Typescript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![](https://badges.aleen42.com/src/vitejs.svg)
+
+
 DVSA Test Booker is a browser extension that helps you monitor and manage UK driving test bookings on the official DVSA site. It aims to streamline the search process, gently automate repetitive steps, and keep you informed so you can find suitable test dates and centres faster.
 
 This project focuses on being safe, respectful of the website’s rules, and helpful to users. It doesn’t bypass queues or security checks. Instead, it assists with routine tasks like navigating, searching, and notifying you about availability.
