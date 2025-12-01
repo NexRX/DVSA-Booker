@@ -24,6 +24,7 @@ import onLogin from "./on-login";
 import onManage from "./on-manage";
 
 import { recordCaptcha, recordBanned, recommendedWaitBeforeRetry, shouldDeferCaptcha, shouldDeferBanned } from "@src/state/security";
+import { secondsToHumanReadable } from "@src/logic/date";
 
 type LazyUiExports = {
   waitUI: (waitSeconds?: number, randomize?: boolean) => Promise<void>;
@@ -207,7 +208,7 @@ export class ContentStateMachine {
 
       try {
         const ui = this.getUi();
-        ui.setMessage("Error occurred, restarting soon");
+        ui.setMessage("Error occurred, restarting soon if no progression");
 
         await ui.waitUI(30, false);
 
@@ -222,7 +223,7 @@ export class ContentStateMachine {
         try {
           const seconds = typeof this.pendingRecheck === "number" ? this.pendingRecheck : 0;
           const ui = this.getUi();
-          ui.setMessage(`Restarting in ${seconds} seconds if no progressions`);
+          ui.setMessage(`Restarting in ${seconds} seconds if no progression`);
           await ui.waitUI(seconds);
         } catch {
           /* ignore */
@@ -280,7 +281,8 @@ export const contentMachine = new ContentStateMachine()
       const defer = await shouldDeferCaptcha();
       const waitSeconds = await recommendedWaitBeforeRetry("captcha");
       if (defer && waitSeconds > 0) {
-        ctx.setMessage(`Captcha encountered. Backing off for ${waitSeconds}s before retry.`);
+        const duration = secondsToHumanReadable(waitSeconds);
+        ctx.setMessage(`Captcha encountered. Backing off for ${duration} (${waitSeconds}s) before retry.`);
         await ctx.waitUI(waitSeconds, false);
       } else {
         ctx.setMessage("Captcha encountered. Short wait before retry.");
@@ -299,7 +301,8 @@ export const contentMachine = new ContentStateMachine()
       const defer = await shouldDeferBanned();
       const waitSeconds = await recommendedWaitBeforeRetry("banned");
       if (defer && waitSeconds > 0) {
-        ctx.setMessage(`Banned / Error 15 detected. Cooling down for ${waitSeconds}s.`);
+        const duration = secondsToHumanReadable(waitSeconds);
+        ctx.setMessage(`Banned / Error 15 detected. Cooling down for ${duration} (${waitSeconds}s).`);
         await ctx.waitUI(waitSeconds, false);
       } else {
         const fallback = Math.max(waitSeconds, 300);
@@ -324,7 +327,7 @@ export const contentMachine = new ContentStateMachine()
   // Fallback
 
   .onFallback(async (ctx) => {
-    ctx.setMessage(`Unknown state (${ctx.current}). Restarting soon.`);
+    ctx.setMessage(`Unknown state (${ctx.current}). Restarting soon if no progression.`);
 
     await ctx.waitUI(60, false);
 

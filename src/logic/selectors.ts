@@ -68,20 +68,14 @@ export function getSelector(key: SelectorKey): string {
 /**
  * Query a single element. Returns null if not found.
  */
-export function query<K extends SelectorKey, T extends Element = HTMLElement>(
-  key: K,
-  root: ParentNode | Document = document
-): T | null {
+export function query<K extends SelectorKey, T extends Element = HTMLElement>(key: K, root: ParentNode | Document = document): T | null {
   return root.querySelector(getSelector(key)) as T | null;
 }
 
 /**
  * Query all matching elements as an array.
  */
-export function queryAll<K extends SelectorKey, T extends Element = HTMLElement>(
-  key: K,
-  root: ParentNode | Document = document
-): T[] {
+export function queryAll<K extends SelectorKey, T extends Element = HTMLElement>(key: K, root: ParentNode | Document = document): T[] {
   return Array.from(root.querySelectorAll(getSelector(key))) as T[];
 }
 
@@ -174,8 +168,20 @@ export function getActiveSlotInputs(): HTMLInputElement[] {
  * Quick check for captcha presence.
  */
 export function detectCaptchaHeadline(): boolean {
-  const p = query("headlineInnerParagraph");
-  return !!p && /Additional security check is required/i.test(p.textContent ?? "");
+  /* @ts-ignore */
+  const mainIframe = document.querySelector("body #main-iframe") as HTMLIFrameElement | null;
+  if (!mainIframe || !mainIframe.contentDocument) {
+    console.debug("IsCaptcha: false (iframe or contentDocument missing)");
+    return false;
+  }
+  const element = mainIframe.contentDocument.querySelector("body .error-headline") as HTMLElement | null;
+  if (!element || typeof element.innerText !== "string") {
+    console.debug("IsCaptcha: false (error-headline element or innerText missing)");
+    return false;
+  }
+  const captcha = element.innerText.includes("Additional security check is required");
+  console.debug("IsCaptcha:", captcha);
+  return captcha;
 }
 
 /**

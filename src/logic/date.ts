@@ -77,3 +77,19 @@ export function parseTestDateTime(dateStr) {
 
   return new Date(match[4], month, day, hour, minute);
 }
+
+export function secondsToHumanReadable(seconds: number): string {
+  let duration: string;
+  if (seconds >= 3600) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    duration = `${hours}h${minutes > 0 ? ` ${minutes}m` : ""}`;
+  } else if (seconds >= 60) {
+    const minutes = Math.floor(seconds / 60);
+    duration = `${minutes}m`;
+  } else {
+    duration = `${seconds}s`;
+  }
+
+  return duration;
+}

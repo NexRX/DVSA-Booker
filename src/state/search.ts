@@ -5,6 +5,7 @@ import { storage } from "@src/state/storage";
 import { state } from "@src/state/state";
 
 import { exists } from "@src/logic/dom";
+import { detectCaptchaHeadline } from "@src/logic/selectors";
 
 export const SEARCH_KEY = "search";
 
@@ -60,7 +61,7 @@ async function detectState(path: string): Promise<TSearch["state"]> {
   // Allow DOM to settle slightly
   await new Promise((resolve) => setTimeout(resolve, 50));
 
-  if (detectCaptcha()) return "captcha";
+  if (detectCaptchaHeadline()) return "captcha";
   else if (detectBanned()) return "banned";
   else if (path.startsWith("/login")) return "login";
   else if (path.startsWith("/manage")) {
@@ -84,17 +85,6 @@ export async function updatedState(path: string = window.location.pathname): Pro
 
   return stateValue;
 }
-
-function detectCaptcha() {
-  const needle = "Additional security check is required";
-  const headline = document.querySelector(SELECTORS.headlineInnerParagraph);
-
-  const isAdditionalCheck = textIncludes(headline, needle);
-  const iframe = document.querySelector(SELECTORS.bannedIframe);
-
-  return isAdditionalCheck || (!!iframe && iframe.innerHTML.startsWith(needle));
-}
-
 function detectBanned() {
   const iframe = document.querySelector(SELECTORS.bannedIframe);
   return !!iframe && iframe.innerHTML.startsWith("Request unsuccessful. Incapsula incident ID:");

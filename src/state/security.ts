@@ -43,10 +43,10 @@ import { storage } from "./storage";
 
 export const SECURITY_KEY = "security";
 
-const BASE_CAPTCHA_SECONDS = 120; // 2 minutes
+const BASE_CAPTCHA_SECONDS = 600; // 10 minutes
 const MAX_CAPTCHA_SECONDS = 3600; // 60 minutes
 
-const BASE_BANNED_SECONDS = 600; // 10 minutes
+const BASE_BANNED_SECONDS = 1800; // 30 minutes
 const MAX_BANNED_SECONDS = 21600; // 6 hours
 
 // Hard cap on exponential level (prevents overflow & overly huge waits)
