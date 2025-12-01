@@ -1,3 +1,6 @@
+<div align="center">
+<img width="128" src="/public/logo.png" alt="logo"/>
+
 # DVSA Test Booker 🚗📅
 
 ![](https://img.shields.io/badge/Typescript-3178C6?style=flat-square&logo=typescript&logoColor=white)
