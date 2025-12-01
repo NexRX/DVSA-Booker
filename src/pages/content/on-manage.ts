@@ -180,7 +180,7 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
   "manage-confirm-changes-final": async (ctx) => {
     const qualifies = await ctx.isConfirmationQualifies();
     if (qualifies) {
-      const MINUTES = 9;
+      const MINUTES = 15;
       ctx.play(successSound, true);
       ctx.setMessage(`Qualified test found! You have ${MINUTES} minutes before auto-return.`);
       await ctx.waitUI(60 * MINUTES, false);
