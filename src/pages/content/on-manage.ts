@@ -12,7 +12,7 @@
  * Default export `onManage(state)` still exists for backward compatibility with existing imports.
  */
 
-import { testDetails, getDaysAllowedNumberArray, config as Config, TTestDetails, state as appState } from "@src/state";
+import { testDetails, getDaysAllowedNumberArray, config as Config, TTestDetails, state as appState, state } from "@src/state";
 import { ManageState } from "@src/state/search";
 import { click, simulateTyping, wait } from "@src/logic/simulate";
 import { setMessage, waitUI } from "./content-ui";
@@ -101,7 +101,7 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
 
     if (!lastChangeEl || !testCentreEl) {
       ctx.setMessage("Unable to read current booking details, retrying soon");
-      fallbackAfterAwhile();
+      await fallbackAfterAwhile();
       return;
     }
 
@@ -110,7 +110,7 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
 
     if (!parsedDate) {
       ctx.setMessage("Failed to parse current test date, will retry");
-      fallbackAfterAwhile();
+      await fallbackAfterAwhile();
       return;
     }
 
@@ -129,7 +129,7 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
     await wait(250);
     click("test-centres-submit");
     ctx.setMessage("Searching test centres...");
-    fallbackAfterAwhile();
+    await fallbackAfterAwhile();
   },
 
   "manage-search-results": async (ctx) => {
@@ -137,7 +137,7 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
     if (testLinks.length > 0) {
       const [_date, link, name] = testLinks[0];
       ctx.setMessage("Found test at " + name);
-      ctx.play(successSound, false);
+      ctx.play(successSound, true);
       click(link);
     } else {
       if (testCentersDisplayed() < (ctx.config.showCentersMax ?? 12)) {
@@ -150,7 +150,7 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
         click("test-centres-submit");
       }
     }
-    fallbackAfterAwhile();
+    await fallbackAfterAwhile();
   },
 
   "manage-test-time": async (ctx) => {
@@ -158,7 +158,7 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
     const timeClicked = dateClicked && (await ctx.clickTestTime());
 
     if (dateClicked && timeClicked) {
-      ctx.play(successSound, false);
+      ctx.play(successSound, true);
       ctx.setMessage("Test date & time selected, confirming...");
       click("slot-chosen-submit");
       click("slot-warning-continue");
@@ -171,30 +171,34 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
   },
 
   "manage-confirm-who-are-you": async (ctx) => {
-    ctx.play(successSound, false);
+    ctx.play(successSound, true);
     ctx.setMessage("Confirming candidate identity");
-    fallbackAfterAwhile();
+    await fallbackAfterAwhile();
     click("i-am-candidate");
   },
 
   "manage-confirm-changes-final": async (ctx) => {
     const qualifies = await ctx.isConfirmationQualifies();
     if (qualifies) {
+      const MINUTES = 9;
       ctx.play(successSound, true);
-      ctx.setMessage("Qualified test found! You have 9 minutes before auto-return.");
-      await ctx.waitUI(60 * 9, false);
-      ctx.navigateToLogin();
+      ctx.setMessage(`Qualified test found! You have ${MINUTES} minutes before auto-return.`);
+      await ctx.waitUI(60 * MINUTES, false);
+      // TODO: When we find a test we actually want, change this to click("confirm")
+      click("abandon");
+      click("abandon-changes");
     } else {
       ctx.play(warnSound, true);
       ctx.setMessage("Found test but does not meet criteria. Retrying in 2 minutes.");
-      await ctx.waitUI(60 * 2, false);
-      ctx.navigateToLogin();
+      await ctx.waitUI(60 * 0.1, false);
+      click("abandon");
+      click("abandon-changes");
     }
   },
 
   unknown: async (ctx) => {
     ctx.setMessage("Unknown manage state; will retry soon.");
-    fallbackAfterAwhile();
+    await fallbackAfterAwhile();
   },
 };
 
@@ -229,6 +233,9 @@ async function findTest(details: TTestDetails) {
   const allowedDays = await getDaysAllowedNumberArray();
   const allowedCenters = details.allowedLocations ?? [];
 
+  const onlyMatchSooner = (await testDetails.get()).onlyMatchSooner;
+  const currentTestDate = onlyMatchSooner ? new Date((await state.get()).currentTestDate) : null;
+
   const filtered = sortedDateLinks
     .filter(([date, _, name]) => {
       const isWithinDateRange = date >= min && date <= max;
@@ -247,6 +254,12 @@ async function findTest(details: TTestDetails) {
         (name ? allowedCenters.some((center) => name.toLowerCase().startsWith(center.toLowerCase())) : false);
       if (!isAllowedCenter) console.debug(`[on-manage][filter] ${name} filtered out because it is not a allowed center`);
       return isAllowedCenter;
+    })
+    .filter(([date, time]) => {
+      if (!onlyMatchSooner) return true;
+      const isSoonerThanCurrentTest = date < currentTestDate;
+      console.debug(`[on-manage][filter] ${name} filtered out because ${date} is not sooner than current test date ${currentTestDate}`);
+      return isSoonerThanCurrentTest;
     });
 
   console.debug("[on-manage] Filtered test date links:", filtered);
@@ -331,9 +344,11 @@ async function internalIsConfirmationTestCenterQualifies(): Promise<boolean> {
     return false;
   }
 
+  const onlyMatchSooner = (await testDetails.get()).onlyMatchSooner;
+
   const details = await testDetails.get();
   const allowedCenters = details.allowedLocations ?? [];
-  const isSooner = newTestDate < oldTestDate;
+  const isSooner = !onlyMatchSooner || newTestDate < oldTestDate;
   const isWithinRange = newTestDate >= new Date(details.minDate ?? 0) && newTestDate <= new Date(details.maxDate ?? 0);
   const isAllowedDay = (await getDaysAllowedNumberArray()).includes(newTestDate.getDay());
   const isAllowedCenter =

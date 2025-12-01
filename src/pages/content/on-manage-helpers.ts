@@ -1,5 +1,5 @@
-import { testDetails, getDaysAllowedNumberArray, config as Config, TTestDetails } from "@src/state";
-import { parseTestDateTime } from "@src/logic/date";
+import { testDetails, getDaysAllowedNumberArray, config as Config, TTestDetails, fallbackSeconds } from "@src/state";
+import { parseTestDateTime, secondsToHumanReadable } from "@src/logic/date";
 import { navigateTo } from "@src/logic/navigation";
 import { setMessage } from "./content-ui";
 
@@ -116,10 +116,10 @@ export async function confirmIfConfigurationAllows() {
   console.log("Test confirmation details:", { newTestDate, oldTestDate, newLocation, oldLocation }, { isSooner, isValid });
 }
 
-export function fallbackAfterAwhile() {
-  const THREE_MINUTES_IN_MS = 1000 * 60 * 3;
-  setTimeout(() => navigateTo("login"), THREE_MINUTES_IN_MS);
-  setMessage("Will auto retry if we havent navigated in 3 minutes");
+export async function fallbackAfterAwhile() {
+  const seconds = await fallbackSeconds();
+  const duration = secondsToHumanReadable(seconds);
+  setMessage(`Will auto retry if we haven't navigated in ${duration} (${seconds} seconds)`);
 }
 
 export function testCentersDisplayed() {

@@ -5,6 +5,7 @@ import TextBox from "./components/textbox";
 import ToolTip from "./components/tooltip";
 import drivingLicenceExample from "@assets/img/driving-licence-sample.jpg";
 import { getYMD } from "@src/logic/date";
+import Toggle from "./components/toggle";
 
 const Settings: Component = () => {
   return (
@@ -72,6 +73,13 @@ const Settings: Component = () => {
             )}
           </For>
         </div>
+      </InputGroup>
+      <InputGroup name="Only Match Sooner Tests">
+        <ToolTip>
+          If a test is found that matches all other conditions but is not sooner than the current detected test then it will be ignored if
+          this is ticked.
+        </ToolTip>
+        <Toggle checked={settings().onlyMatchSooner} setter={(enabled) => setSettings({ ...settings(), onlyMatchSooner: enabled })} />
       </InputGroup>
     </div>
   );
