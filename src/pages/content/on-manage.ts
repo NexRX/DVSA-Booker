@@ -179,20 +179,20 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
 
   "manage-confirm-changes-final": async (ctx) => {
     const qualifies = await ctx.isConfirmationQualifies();
+    if (document.getElementById("abandon-changes")) click("abandon-changes"); // We clicked abandon changes prior to refresh
     if (qualifies) {
       const MINUTES = 15;
       ctx.play(successSound, true);
       ctx.setMessage(`Qualified test found! You have ${MINUTES} minutes before auto-return.`);
+      console.log(document.getElementById("abandon"), document.getElementById("abandon-changes"));
       await ctx.waitUI(60 * MINUTES, false);
       // TODO: When we find a test we actually want, change this to click("confirm")
       click("abandon");
-      click("abandon-changes");
     } else {
       ctx.play(warnSound, true);
       ctx.setMessage("Found test but does not meet criteria. Retrying in 2 minutes.");
       await ctx.waitUI(60 * 0.1, false);
       click("abandon");
-      click("abandon-changes");
     }
   },
 
