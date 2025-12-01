@@ -7,6 +7,7 @@
 # build
 /dist
 *.crx
+*.zip
 
 # etc
 .DS_Store
