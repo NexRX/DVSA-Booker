@@ -11,6 +11,8 @@ DVSA Test Booker is a browser extension that helps you monitor and manage UK dri
 
 This project focuses on being safe, respectful of the website’s rules, and helpful to users. It doesn’t bypass queues or security checks. Instead, it assists with routine tasks like navigating, searching, and notifying you about availability.
 
+</div>
+
 ---
 
 ## What It Does 🔍
