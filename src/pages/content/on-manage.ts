@@ -1,7 +1,21 @@
+/**
+ * Refactored manage flow handling:
+ *
+ * This file exposes a handler map instead of a large switch statement.
+ * Each manage-state is mapped to a focused async handler receiving a rich context.
+ *
+ * Benefits:
+ *  - Easier to add / modify individual states.
+ *  - Clear separation of concerns (DOM extraction, decision logic, side-effects).
+ *  - Enables reuse from the higher-level content state machine (state-machine.ts).
+ *
+ * Default export `onManage(state)` still exists for backward compatibility with existing imports.
+ */
+
 import { testDetails, getDaysAllowedNumberArray, config as Config, TTestDetails, state as appState } from "@src/state";
 import { ManageState } from "@src/state/search";
 import { click, simulateTyping, wait } from "@src/logic/simulate";
-import { setMessage, waitUI } from ".";
+import { setMessage, waitUI } from "./content-ui";
 import { sortSoonestDateElement, sortSoonestDateNamed, parseTestDateTime } from "@src/logic/date";
 import {
   findConfirmationTestDates,
@@ -12,205 +26,344 @@ import {
 } from "./on-manage-helpers";
 import { navigateTo } from "@src/logic/navigation";
 import { play } from "../background/exports";
-import success from "@assets/sounds/success.mp3";
-import warn from "@assets/sounds/warn.mp3";
+import successSound from "@assets/sounds/success.mp3";
+import warnSound from "@assets/sounds/warn.mp3";
+import { SELECTORS, getBookableCalendarLinks, getActiveSlotInputs } from "@src/logic/selectors";
 
+/* -------------------------------------------------------------------------- */
+/* Handler Context                                                            */
+/* -------------------------------------------------------------------------- */
+
+interface ManageHandlerContext {
+  state: ManageState;
+  details: Awaited<ReturnType<typeof testDetails.get>>;
+  config: Awaited<ReturnType<typeof Config.get>>;
+  setMessage: (msg: string | undefined) => void;
+  waitUI: (seconds?: number, randomize?: boolean) => Promise<void>;
+  navigateToLogin: () => void;
+  play: (soundUrl: string, loop?: boolean) => void;
+  // Utility helpers reused by handlers
+  clickTestDate: () => Promise<boolean>;
+  clickTestTime: () => Promise<boolean>;
+  isConfirmationQualifies: () => Promise<boolean>;
+  findTests: (details: TTestDetails) => Promise<ReadonlyArray<readonly [Date, HTMLAnchorElement, string | undefined]>>;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Public Entry Point                                                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Backwards-compatible entry used by state machine.
+ */
 export default async function onManage(state: ManageState) {
+  await runManageState(state);
+}
+
+/**
+ * Main dispatcher: resolves handler or falls back.
+ */
+export async function runManageState(state: ManageState) {
   const details = await testDetails.get();
   const config = await Config.get();
+
+  // Small natural delay to allow DOM to settle if navigation just occurred
   await wait(100, 20);
 
-  switch (state) {
-    case "manage-view":
-      let currentTestDate = parseTestDateTime(findBookingDetail("Last date to change or cancel", "backward").innerText);
-      const currentTestLocation = findBookingDetail("Test centre", "h2>dd").innerText;
-      appState.set({ ...(await appState.get()), currentTestDate: currentTestDate.getTime(), currentTestLocation });
+  const ctx: ManageHandlerContext = {
+    state,
+    details,
+    config,
+    setMessage,
+    waitUI,
+    navigateToLogin: () => navigateTo("login"),
+    play: (sound, loop = false) => play(sound, loop),
+    clickTestDate: internalClickTestDate,
+    clickTestTime: internalClickTestTime,
+    isConfirmationQualifies: internalIsConfirmationTestCenterQualifies,
+    findTests: findTest,
+  };
 
-      click("test-centre-change");
-      break;
-    case "manage-select-center":
-      await simulateTyping("test-centres-input", details.searchPostcode);
-      await wait(250);
-      click("test-centres-submit");
-      fallbackAfterAwhile();
-      break;
-    case "manage-search-results":
-      const testLinks = await findTest(details);
-      if (testLinks.length > 0) {
-        const [_date, link, name] = testLinks[0];
-        setMessage("Found test at " + name);
-        play("success", false);
-        click(link);
-      } else {
-        setMessage("No tests found, trying again soon");
-        if (testCentersDisplayed() < config.showCentersMax) {
-          setMessage("Searching for more centers momentarily");
-          await waitUI(config.timingSeeMore);
-          click("fetch-more-centres");
-        } else {
-          setMessage("Max centers reached, restarting search momentarily");
-          await waitUI();
-          click("test-centres-submit");
-        }
-      }
-      fallbackAfterAwhile();
-      break;
-    case "manage-test-time":
-      if ((await clickTestDate()) && (await clickTestTime())) {
-        play("success", false);
-        setMessage("Test date & time still available!");
-        click("slot-chosen-submit");
-        click("slot-warning-continue");
-        break;
-      }
-      setMessage("Test date & time was taken before we could confirm");
-      await waitUI(60, false);
-      navigateTo("login");
-      break;
-    case "manage-confirm-who-are-you":
-      fallbackAfterAwhile();
-      play("success", false);
-      click("i-am-candidate");
-      break;
-    case "manage-confirm-changes-final":
-      if (isConfirmtionTestCenterQualifies()) {
-        play(success, true);
-        setMessage("Test center matches! Press confirm or cancel, in 9 minutes we will auto confirm");
-        await waitUI(60 * 9, false);
-        navigateTo("login");
-      } else {
-        play(warn, true);
-        setMessage("Found a test center but it doesn't qualify, retrying again in 2 minutes");
-        await waitUI(60 * 2, false);
-        navigateTo("login");
-      }
-      break;
-    case "unknown":
-      fallbackAfterAwhile();
-      break;
-  }
+  const handler = manageHandlers[state] ?? manageHandlers.unknown;
+  await handler(ctx);
 }
 
-function findCurrentTestDetails() {
-  const details = findConfirmationTestDates();
-  console.log("details", details);
-}
+/* -------------------------------------------------------------------------- */
+/* Handler Map                                                                */
+/* -------------------------------------------------------------------------- */
 
-// returns an array of [date, link] tuples sorted by date
+type ManageHandler = (ctx: ManageHandlerContext) => Promise<void>;
+
+const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
+  "manage-view": async (ctx) => {
+    const lastChangeEl = findBookingDetail("Last date to change or cancel", "backward");
+    const testCentreEl = findBookingDetail("Test centre", "h2>dd");
+
+    if (!lastChangeEl || !testCentreEl) {
+      ctx.setMessage("Unable to read current booking details, retrying soon");
+      fallbackAfterAwhile();
+      return;
+    }
+
+    const parsedDate = parseTestDateTime(lastChangeEl.innerText);
+    const currentLocation = testCentreEl.innerText;
+
+    if (!parsedDate) {
+      ctx.setMessage("Failed to parse current test date, will retry");
+      fallbackAfterAwhile();
+      return;
+    }
+
+    // Persist current test meta in app state
+    appState.set({
+      ...(await appState.get()),
+      currentTestDate: parsedDate.getTime(),
+      currentTestLocation: currentLocation,
+    });
+
+    click("test-centre-change");
+  },
+
+  "manage-select-center": async (ctx) => {
+    await simulateTyping("test-centres-input", ctx.details.searchPostcode ?? "");
+    await wait(250);
+    click("test-centres-submit");
+    ctx.setMessage("Searching test centres...");
+    fallbackAfterAwhile();
+  },
+
+  "manage-search-results": async (ctx) => {
+    const testLinks = await ctx.findTests(ctx.details);
+    if (testLinks.length > 0) {
+      const [_date, link, name] = testLinks[0];
+      ctx.setMessage("Found test at " + name);
+      ctx.play(successSound, false);
+      click(link);
+    } else {
+      if (testCentersDisplayed() < (ctx.config.showCentersMax ?? 12)) {
+        ctx.setMessage("No tests found, will expand search coverage...");
+        await ctx.waitUI(ctx.config.timingSeeMore);
+        click("fetch-more-centres");
+      } else {
+        ctx.setMessage("No tests found & max centres loaded, will restarting search...");
+        await ctx.waitUI(); // uses config refresh timing
+        click("test-centres-submit");
+      }
+    }
+    fallbackAfterAwhile();
+  },
+
+  "manage-test-time": async (ctx) => {
+    const dateClicked = await ctx.clickTestDate();
+    const timeClicked = dateClicked && (await ctx.clickTestTime());
+
+    if (dateClicked && timeClicked) {
+      ctx.play(successSound, false);
+      ctx.setMessage("Test date & time selected, confirming...");
+      click("slot-chosen-submit");
+      click("slot-warning-continue");
+      return;
+    }
+
+    ctx.setMessage("Slot vanished before confirmation, retrying in 60s");
+    await ctx.waitUI(60, false);
+    ctx.navigateToLogin();
+  },
+
+  "manage-confirm-who-are-you": async (ctx) => {
+    ctx.play(successSound, false);
+    ctx.setMessage("Confirming candidate identity");
+    fallbackAfterAwhile();
+    click("i-am-candidate");
+  },
+
+  "manage-confirm-changes-final": async (ctx) => {
+    const qualifies = await ctx.isConfirmationQualifies();
+    if (qualifies) {
+      ctx.play(successSound, true);
+      ctx.setMessage("Qualified test found! You have 9 minutes before auto-return.");
+      await ctx.waitUI(60 * 9, false);
+      ctx.navigateToLogin();
+    } else {
+      ctx.play(warnSound, true);
+      ctx.setMessage("Found test but does not meet criteria. Retrying in 2 minutes.");
+      await ctx.waitUI(60 * 2, false);
+      ctx.navigateToLogin();
+    }
+  },
+
+  unknown: async (ctx) => {
+    ctx.setMessage("Unknown manage state; will retry soon.");
+    fallbackAfterAwhile();
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Internal Helpers (Handlers rely on these)                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Find candidate date links for test centres and filter according to settings.
+ * Returns sorted ascending by soonest date.
+ */
 async function findTest(details: TTestDetails) {
-  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>("a.test-centre-details-link")).filter((a) =>
+  const rawLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>(SELECTORS.testCentreDetailsLinks)).filter((a) =>
     a.innerText.includes("available tests around")
   );
 
-  const dateLinks = links.map((link) => {
+  const dateLinks = rawLinks.map((link) => {
     const name = (link.querySelector(".test-centre-details > span > h4") as HTMLElement | null)?.innerText;
-    const match = link.innerText.match(/\d{2}\/\d{2}\/\d{4}/); // Regular expression to match dates in DD/MM/YYYY format
+    const match = link.innerText.match(/\d{2}\/\d{2}\/\d{4}/);
     if (!match) return null;
-    // Parse date in dd/mm/yyyy format
     const [day, month, year] = match[0].split("/").map(Number);
     const date = new Date(year, month - 1, day);
     return [date, link, name] as const;
   });
 
-  console.debug("Found test links and attempting sort:", dateLinks);
-  const sortedDateLinks = dateLinks.filter(([date]) => date !== null).sort(sortSoonestDateNamed);
+  console.debug("[on-manage] Raw test date links:", dateLinks);
 
-  // Dates outside the range
-  const min = new Date(details.minDate);
-  const max = new Date(details.maxDate);
-  // Days of the week that are not available (Monday, friday, etc)
+  const sortedDateLinks = dateLinks.filter(Boolean).sort(sortSoonestDateNamed);
+
+  const min = new Date(details.minDate ?? Date.now());
+  const max = new Date(details.maxDate ?? Date.now() + 1000 * 60 * 60 * 24 * 180);
   const allowedDays = await getDaysAllowedNumberArray();
-  // Allowed test centers (should match case insensitive & starts with)
-  const allowedCenters = (await details.allowedLocations) ?? [];
+  const allowedCenters = details.allowedLocations ?? [];
 
-  const filteredDateLinks = sortedDateLinks
-    .filter(([date]) => date >= min && date <= max) // Filter out dates outside the range
-    .filter(([date]) => allowedDays.includes(date.getDay())) // filter out days of the week that are not available (Monday, friday, etc)
-    .filter(
-      ([_, __, name]) => allowedCenters.length === 0 || allowedCenters.some((center) => name.toLowerCase().startsWith(center.toLowerCase()))
-    ); // Filter allowed test centers (should match case insensitive & starts with)
+  const filtered = sortedDateLinks
+    .filter(([date, _, name]) => {
+      const isWithinDateRange = date >= min && date <= max;
+      if (!isWithinDateRange)
+        console.debug(`[on-manage][filter] ${name} filtered out because ${date} is outside of range ${min} to ${max}`);
+      return isWithinDateRange;
+    })
+    .filter(([date]) => {
+      const isAllowedDay = allowedDays.includes(date.getDay());
+      if (!isAllowedDay) console.debug(`[on-manage][filter] ${name} filtered out because ${date} is not on a allowed day`);
+      return isAllowedDay;
+    })
+    .filter(([_, __, name]) => {
+      const isAllowedCenter =
+        allowedCenters.length === 0 ||
+        (name ? allowedCenters.some((center) => name.toLowerCase().startsWith(center.toLowerCase())) : false);
+      if (!isAllowedCenter) console.debug(`[on-manage][filter] ${name} filtered out because it is not a allowed center`);
+      return isAllowedCenter;
+    });
 
-  console.debug("Filtered date links", filteredDateLinks);
-  return filteredDateLinks;
+  console.debug("[on-manage] Filtered test date links:", filtered);
+  return filtered;
 }
 
-export async function clickTestDate() {
-  const bookableLinks = Array.from(
-    document.querySelectorAll<HTMLAnchorElement>("td.BookingCalendar-date--bookable a.BookingCalendar-dateLink")
-  );
+/**
+ * Attempt to click earliest acceptable test date in calendar.
+ */
+async function internalClickTestDate(): Promise<boolean> {
   const setting = await testDetails.get();
+  const min = new Date(setting.minDate ?? Date.now());
+  const max = new Date(setting.maxDate ?? Date.now() + 1000 * 60 * 60 * 24 * 180);
 
-  const min = new Date(setting.minDate);
-  const max = new Date(setting.maxDate);
+  const bookableLinks = getBookableCalendarLinks();
+  console.log("[on-manage] Bookable calendar links found:", bookableLinks.length);
 
-  console.log("Bookable links found:", bookableLinks);
-  const sortedFilteredLinks = bookableLinks
+  const sortedFiltered = bookableLinks
     .map((link) => {
-      let rawDate = link.getAttribute("data-date"); // parse date in format "yyyy-mm-dd"
-      return [new Date(rawDate), link] as const;
+      const rawDate = link.getAttribute("data-date");
+      return [rawDate ? new Date(rawDate) : new Date(NaN), link] as const;
     })
-    .filter(([date]) => date >= min && date <= max)
+    .filter(([date]) => !isNaN(date.getTime()) && date >= min && date <= max)
     .sort(sortSoonestDateElement);
 
-  if (sortedFilteredLinks.length === 0) {
-    console.warn("No bookable links found within the specified date range");
+  if (sortedFiltered.length === 0) {
+    console.warn("[on-manage] No valid bookable dates in range");
     return false;
   }
-  const [date, link] = sortedFilteredLinks[0];
-  console.log("Clicking link:", link, date);
-  click(link);
+
+  const [date, anchor] = sortedFiltered[0];
+  console.log("[on-manage] Selecting date:", date);
+  click(anchor);
   return true;
 }
 
-async function clickTestTime() {
-  const timeLinks = Array.from(document.querySelectorAll<HTMLInputElement>(".SlotPicker-day.is-active label input"));
+/**
+ * Click earliest available test time.
+ */
+async function internalClickTestTime(): Promise<boolean> {
+  const timeInputs = getActiveSlotInputs();
 
-  // Map over the array and parse the data-datetime-label attribute as a Date object
-  const parsedTimeLinks = timeLinks
+  const parsed = timeInputs
     .map((input) => {
       const label = input.getAttribute("data-datetime-label");
       if (!label) return null;
       const datetime = parseTestDateTime(label);
+      if (!datetime) return null;
       return [datetime, input] as const;
     })
-    .filter((item): item is [Date, HTMLInputElement] => item !== null)
+    .filter((p): p is [Date, HTMLInputElement] => !!p)
     .sort((a, b) => a[0].getTime() - b[0].getTime());
 
-  if (parsedTimeLinks.length === 0) {
-    console.warn("No time links found");
+  if (parsed.length === 0) {
+    console.warn("[on-manage] No time slots found");
     return false;
   }
 
-  const [time, input] = parsedTimeLinks[0];
-  console.log("Clicking time input:", input, time);
+  const [time, input] = parsed[0];
+  console.log("[on-manage] Selecting time:", time);
   click(input);
   return true;
 }
 
-async function isConfirmtionTestCenterQualifies() {
-  const { newTestDate, oldTestDate } = findConfirmationTestDates();
-  const { newLocation, oldLocation } = findConfirmationTestLocations();
-  const allowedCenters = (await testDetails.get()).allowedLocations ?? [];
+/**
+ * Evaluate final confirmation page data against configuration.
+ */
+async function internalIsConfirmationTestCenterQualifies(): Promise<boolean> {
+  const dates = findConfirmationTestDates();
+  const locations = findConfirmationTestLocations();
+
+  if (!dates || !locations) {
+    console.warn("[on-manage] Missing confirmation elements");
+    return false;
+  }
+
+  const { newTestDate, oldTestDate } = dates;
+  const { newLocation, oldLocation } = locations;
+
+  if (!newTestDate || !oldTestDate || !newLocation) {
+    console.warn("[on-manage] Incomplete confirmation data", { newTestDate, oldTestDate, newLocation, oldLocation });
+    return false;
+  }
 
   const details = await testDetails.get();
+  const allowedCenters = details.allowedLocations ?? [];
   const isSooner = newTestDate < oldTestDate;
-  const isWithinMinMaxDates = newTestDate >= new Date(details.minDate) && newTestDate <= new Date(details.maxDate);
-  const isAllowedDayOfWeek = (await getDaysAllowedNumberArray()).includes(newTestDate.getDay());
+  const isWithinRange = newTestDate >= new Date(details.minDate ?? 0) && newTestDate <= new Date(details.maxDate ?? 0);
+  const isAllowedDay = (await getDaysAllowedNumberArray()).includes(newTestDate.getDay());
   const isAllowedCenter =
     allowedCenters.length === 0 || allowedCenters.some((center) => newLocation.toLowerCase().startsWith(center.toLowerCase()));
 
-  console.log(
-    "Test confirmation details:",
-    { newTestDate, oldTestDate, newLocation, oldLocation },
-    { isSooner, isWithinMinMaxDates, isAllowedDayOfWeek, isAllowedCenter }
-  );
+  console.log("[on-manage] Final confirmation evaluation:", {
+    newTestDate,
+    oldTestDate,
+    newLocation,
+    oldLocation,
+    isSooner,
+    isWithinRange,
+    isAllowedDay,
+    isAllowedCenter,
+  });
 
-  return isSooner && isWithinMinMaxDates && isAllowedDayOfWeek && isAllowedCenter;
+  return isSooner && isWithinRange && isAllowedDay && isAllowedCenter;
 }
 
-// function isValidTestCandidate() {
-//   const details = await testDetails.get();
-//   const isSooner = newTestDate < oldTestDate;
-//   const isWithinMinMaxDates = newTestDate >= new Date(details.minDate) && newTestDate <= new Date(details.maxDate);
-//   const isAllowedDayOfWeek = (await getDaysAllowedNumberArray()).includes(newTestDate.getDay());
-// }
+/* -------------------------------------------------------------------------- */
+/* (Optional) Future Enhancements                                             */
+/* -------------------------------------------------------------------------- */
+/**
+ * Ideas:
+ *  - Introduce transition validation (ensure legal progression).
+ *  - Add a 'retry budget' to prevent infinite loops on broken pages.
+ *  - Persist last successful search timestamp to backoff more intelligently.
+ *  - Emit analytics events (slots seen, slots clicked, centers expanded).
+ */
+
+/* -------------------------------------------------------------------------- */
+/* End                                                                        */
+/* -------------------------------------------------------------------------- */

@@ -1,13 +1,33 @@
 import { testDetails, getDaysAllowedNumberArray, config as Config, TTestDetails } from "@src/state";
 import { parseTestDateTime } from "@src/logic/date";
 import { navigateTo } from "@src/logic/navigation";
-import { setMessage } from ".";
+import { setMessage } from "./content-ui";
+
+/**
+ * Centralized selectors for easier maintenance.
+ * Add new selectors here instead of scattering raw strings.
+ */
+const SELECTORS = {
+  confirmBookingDetailsId: "confirm-booking-details",
+  testCentreResultsItems: ".test-centre-results > li",
+} as const;
+
+/**
+ * Throws if the element is missing; improves early failure visibility compared to silent null checks.
+ * Use in places where the DOM is expected to be in a specific state.
+ */
+export function requiredElement<T extends HTMLElement>(el: T | null, context: string): T {
+  if (!el) {
+    throw new Error(`Missing expected element: ${context}`);
+  }
+  return el;
+}
 
 // Helper to find the <dd> for a given <dt> label in #confirm-booking-details
 export function findBookingDetail(
   label: string,
   find: "forward" | "backward" | "h2>dd" = "forward",
-  section: string = "confirm-booking-details"
+  section: string = SELECTORS.confirmBookingDetailsId
 ): HTMLElement | null {
   const detailsSection = document.getElementById(section);
   if (!detailsSection) {
@@ -103,5 +123,5 @@ export function fallbackAfterAwhile() {
 }
 
 export function testCentersDisplayed() {
-  return document.querySelectorAll(".test-centre-results > li").length;
+  return document.querySelectorAll(SELECTORS.testCentreResultsItems).length;
 }

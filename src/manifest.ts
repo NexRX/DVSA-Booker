@@ -29,7 +29,7 @@ export default defineManifest({
     {
       matches: ["https://driverpracticaltest.dvsa.gov.uk/*", "https://example.com/*"], // Replace with your domain
       // @ts-ignore
-      js: ["src/pages/content/index.tsx"],
+      js: ["src/pages/content/index.ts"],
     },
   ],
 });
