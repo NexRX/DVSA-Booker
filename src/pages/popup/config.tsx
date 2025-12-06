@@ -1,4 +1,4 @@
-import { Component, JSX } from "solid-js";
+import { Component, JSX, Show } from "solid-js";
 import { config, setConfig } from "@src/state/solid";
 import InputGroup from "./components/input-group";
 import TextBox from "./components/textbox";
@@ -44,25 +44,35 @@ const Config: Component = () => {
           setter={(value) => setConfig({ ...config(), fallbackRestartSeconds: Number(value) })}
         />
       </InputGroup>
-      <InputGroup name="Dont Inject/Show UI on Security Pages">
+      <InputGroup name="Enable Injected UI">
         <ToolTip>
-          When enabled, the UI will not be injected or shown on security pages. You may want to enable this to avoid being detected as a
-          bot.
+          When enabled, a UI may be injected or shown on some pages. You may want to keep this disabled to avoid being detected as a bot.
+          Anything disable in the inject UI is also visible in this popup's Home tab.
         </ToolTip>
-        <Toggle
-          checked={config().dontInjectUIOnSecurityPages}
-          setter={(enabled) => setConfig({ ...config(), dontInjectUIOnSecurityPages: enabled })}
-        />
+        <Toggle checked={config().enableInjectedUI} setter={(enabled) => setConfig({ ...config(), enableInjectedUI: enabled })} />
       </InputGroup>
-      <InputGroup name="Dont Inject/Show UI on Unknown Pages">
-        <ToolTip>
-          When enabled, the UI will not be injected or shown on unknown pages. You may want to enable this to avoid being detected as a bot.
-        </ToolTip>
-        <Toggle
-          checked={config().dontInjectUIOnUnknownPages}
-          setter={(enabled) => setConfig({ ...config(), dontInjectUIOnUnknownPages: enabled })}
-        />
-      </InputGroup>
+      <Show when={config().enableInjectedUI}>
+        <InputGroup name="Dont Enable UI on Security Pages (Experimental)">
+          <ToolTip>
+            When enabled, the UI will <b>not</b> be injected or shown on security pages. You may want to enable this to avoid being detected
+            as a bot. <i>THIS IS EXPERIMENTAL AND MAY NOT WORK AS EXPECTED.</i>
+          </ToolTip>
+          <Toggle
+            checked={config().dontInjectUIOnSecurityPages}
+            setter={(enabled) => setConfig({ ...config(), dontInjectUIOnSecurityPages: enabled })}
+          />
+        </InputGroup>
+        <InputGroup name="Dont Enable UI on Unknown Pages (Experimental)">
+          <ToolTip>
+            When enabled, the UI will <b>not</b> be injected or shown on unknown pages. You may want to enable this to avoid being detected
+            as a bot. <i>THIS IS EXPERIMENTAL AND MAY NOT WORK AS EXPECTED.</i>
+          </ToolTip>
+          <Toggle
+            checked={config().dontInjectUIOnUnknownPages}
+            setter={(enabled) => setConfig({ ...config(), dontInjectUIOnUnknownPages: enabled })}
+          />
+        </InputGroup>
+      </Show>
     </div>
   );
 };

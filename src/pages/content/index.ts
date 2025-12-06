@@ -30,14 +30,18 @@ window.addEventListener("beforeunload", stop);
 
 // Helper to avoid inject UI on security pages
 async function shouldInjectUI() {
-  const { dontInjectUIOnSecurityPages, dontInjectUIOnUnknownPages } = await getConfig();
+  const { enableInjectedUI, dontInjectUIOnSecurityPages, dontInjectUIOnUnknownPages } = await getConfig();
+
+  if (!enableInjectedUI) {
+    console.log("Disallow UI injection because disabled");
+    return false;
+  }
   if (!dontInjectUIOnSecurityPages && !dontInjectUIOnUnknownPages) {
     console.log("Allow UI injection because both flags are false");
     return true;
   }
 
   const state = (await getSearch()).state;
-
   if (dontInjectUIOnSecurityPages && (state === "banned" || state === "captcha")) {
     console.log("Disallow UI injection because security page");
     return false;
