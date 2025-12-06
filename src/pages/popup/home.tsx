@@ -4,7 +4,7 @@ import InputGroup from "./components/input-group";
 import { state, setState } from "@src/state/solid";
 import Button from "./components/button";
 import { navigateTo } from "@src/logic/navigation";
-import { isPaused, setIsPaused, waitingSeconds } from "../content/content-ui";
+import { setIsPaused } from "@src/state/ui";
 import { uiShared } from "@src/state/solid";
 
 const Home: Component = () => {
@@ -36,6 +36,19 @@ const Home: Component = () => {
       <p class="text-white border border-black p-1 rounded">
         Last Message: <span class="font-mono">{uiShared().message ?? "idle..."}</span>
       </p>
+      <Show when={uiShared().waitingSeconds !== undefined}>
+        <p class="text-white border border-black p-1 rounded">
+          Waiting: <span class="font-mono">{Math.floor(uiShared().waitingSeconds ?? 0)}</span>s
+        </p>
+        <Switch>
+          <Match when={!uiShared().isPaused}>
+            <Button onClick={() => setIsPaused(true)}>Pause</Button>
+          </Match>
+          <Match when={uiShared().isPaused}>
+            <Button onClick={() => setIsPaused(false)}>Resume</Button>
+          </Match>
+        </Switch>
+      </Show>
       <Button onClick={stop} class="!mt-2">
         Stop Alert Sounds
       </Button>

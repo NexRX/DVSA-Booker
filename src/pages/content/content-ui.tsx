@@ -33,15 +33,10 @@ import Button from "../popup/components/button";
 /* Reactive Signals                                                           */
 /* -------------------------------------------------------------------------- */
 
-/** Human-readable status message. */
-/** Remaining seconds (float) in the active wait countdown; undefined if inactive. */
-export const [waitingSeconds, setWaitingSeconds] = createSignal<number | undefined>(undefined);
-
-/** Whether the current countdown is paused. */
-export const [isPaused, setIsPaused] = createSignal<boolean>(false);
-
 /** Internal handle for active countdown resolver. */
 let activeResolve: (() => void) | null = null;
+
+import { setWaitingSeconds, setIsPaused, getWaitingSeconds, getIsPaused } from "@src/state/ui";
 
 /* -------------------------------------------------------------------------- */
 /* Countdown Logic                                                            */
@@ -58,32 +53,27 @@ export async function waitUI(explicitSeconds?: number, randomize: boolean = true
   const pct = randomize ? cfg.timingRandomizePercent : 0;
 
   const total = randomVariation(base, pct);
-  setWaitingSeconds(Math.max(0, total));
-  setIsPaused(false);
+  await setWaitingSeconds(Math.max(0, total));
+  await setIsPaused(false);
 
-  // Ensure any previous resolver is cleared
   activeResolve = null;
 
   return new Promise<void>((resolve) => {
     activeResolve = resolve;
 
-    const tick = () => {
-      if (waitingSeconds() === undefined) {
-        // Already cleaned externally
+    const tick = async () => {
+      const waiting = await getWaitingSeconds();
+      if (waiting === undefined) {
         cleanup();
         return;
       }
-      if (isPaused()) {
-        // Poll lightly while paused
+      const paused = await getIsPaused();
+      if (paused) {
         setTimeout(tick, 500);
         return;
       }
-      setWaitingSeconds((prev) => {
-        if (prev === undefined) return undefined;
-        const next = prev - 1;
-        return next < 0 ? 0 : next;
-      });
-      const remaining = waitingSeconds();
+      await setWaitingSeconds(waiting > 0 ? waiting - 1 : 0);
+      const remaining = await getWaitingSeconds();
       if (remaining !== undefined && remaining > 0) {
         setTimeout(tick, 1000);
       } else {
@@ -91,14 +81,13 @@ export async function waitUI(explicitSeconds?: number, randomize: boolean = true
       }
     };
 
-    function cleanup() {
-      setWaitingSeconds(undefined);
+    async function cleanup() {
+      await setWaitingSeconds(undefined);
       const r = activeResolve;
       activeResolve = null;
       if (r) r();
     }
 
-    // Kick off first tick after 1s (for a full second display)
     setTimeout(tick, 1000);
   });
 }
@@ -107,9 +96,9 @@ export async function waitUI(explicitSeconds?: number, randomize: boolean = true
  * Reset countdown state without resolving the Promise.
  * Primarily used if the UI needs to forcibly clear display without signaling completion.
  */
-export function resetWaiting() {
-  setWaitingSeconds(undefined);
-  setIsPaused(false);
+export async function resetWaiting() {
+  await setWaitingSeconds(undefined);
+  await setIsPaused(false);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -152,15 +141,15 @@ export function mountContentUI() {
         <p class="text-white border border-black p-1 rounded">
           Message: <span class="font-mono">{uiShared().message ?? "idle..."}</span>
         </p>
-        <Show when={waitingSeconds() !== undefined}>
+        <Show when={uiShared().waitingSeconds !== undefined}>
           <p class="text-white border border-black p-1 rounded">
-            Waiting: <span class="font-mono">{Math.floor(waitingSeconds() ?? 0)}</span>s
+            Waiting: <span class="font-mono">{Math.floor(uiShared().waitingSeconds ?? 0)}</span>s
           </p>
           <Switch>
-            <Match when={!isPaused()}>
+            <Match when={!uiShared().isPaused}>
               <Button onClick={() => setIsPaused(true)}>Pause</Button>
             </Match>
-            <Match when={isPaused()}>
+            <Match when={uiShared().isPaused}>
               <Button onClick={() => setIsPaused(false)}>Resume</Button>
             </Match>
           </Switch>
@@ -208,14 +197,14 @@ export async function messageAndWait(msg: string, seconds?: number, randomize: b
  * True if a countdown is currently active.
  */
 export function isWaitingActive(): boolean {
-  return waitingSeconds() !== undefined;
+  return uiShared().waitingSeconds !== undefined;
 }
 
 /**
  * Remaining whole seconds convenience accessor.
  */
 export function remainingWholeSeconds(): number | null {
-  const v = waitingSeconds();
+  const v = uiShared().waitingSeconds;
   return v === undefined ? null : Math.floor(v);
 }
 
