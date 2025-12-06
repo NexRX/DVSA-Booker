@@ -15,7 +15,8 @@
 import { getTestDetails, getDaysAllowedNumberArray, getConfig, TTestDetails, getState, setState } from "@src/state";
 import { ManageState } from "@src/state/search";
 import { click, simulateTyping, wait } from "@src/logic/simulate";
-import { setMessage, waitUI } from "./content-ui";
+import { waitUI } from "./content-ui";
+import { setMessage } from "@src/state";
 import { sortSoonestDateElement, sortSoonestDateNamed, parseTestDateTime } from "@src/logic/date";
 import {
   findConfirmationTestDates,
@@ -125,6 +126,8 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
   },
 
   "manage-select-center": async (ctx) => {
+    ctx.setMessage("Waiting to search to seem more human");
+    await ctx.waitUI(5);
     await simulateTyping("test-centres-input", ctx.details.searchPostcode ?? "");
     await wait(250);
     click("test-centres-submit");

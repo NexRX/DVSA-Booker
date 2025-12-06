@@ -5,6 +5,7 @@ import solidPlugin from "vite-plugin-solid";
 import tailwindcss from "@tailwindcss/vite";
 import manifest from "./src/manifest";
 import { existsSync, readFileSync, writeFileSync, readdirSync } from "fs";
+import pkg from "./package.json" with { type: "json" };
 
 const root = resolve(__dirname, "src");
 const pagesDir = resolve(root, "pages");
@@ -17,6 +18,9 @@ const FIREFOX = !!process.env.FIREFOX;
 const CHROME = !FIREFOX;
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [
     solidPlugin(),
     crx({ manifest }),
@@ -47,18 +51,40 @@ export default defineConfig({
 });
 
 function patchManifest() {
-  if (!CHROME) return;
-  const manifestPath = resolve(__dirname, "dist/manifest.json");
-  if (existsSync(manifestPath)) {
-    const manifestData = JSON.parse(readFileSync(manifestPath, "utf-8"));
-    manifestData.permissions = manifestData.permissions || [];
-    if (!manifestData.permissions.includes("offscreen")) {
-      manifestData.permissions.push("offscreen");
-      writeFileSync(manifestPath, JSON.stringify(manifestData, null, 2));
-      console.log("Patched manifest.json with 'offscreen' permission.");
+  if (CHROME) {
+    const manifestPath = resolve(__dirname, "dist/manifest.json");
+    if (existsSync(manifestPath)) {
+      const manifestData = JSON.parse(readFileSync(manifestPath, "utf-8"));
+      manifestData.permissions = manifestData.permissions || [];
+      if (!manifestData.permissions.includes("offscreen")) {
+        manifestData.permissions.push("offscreen");
+        writeFileSync(manifestPath, JSON.stringify(manifestData, null, 2));
+        console.log("Patched manifest.json with 'offscreen' permission.");
+      }
+    } else {
+      console.error("Manifest file not found.");
     }
-  } else {
-    console.error("Manifest file not found.");
+  }
+  if (FIREFOX) {
+    const manifestPath = resolve(__dirname, "dist/manifest.json");
+    if (existsSync(manifestPath)) {
+      const manifestData = JSON.parse(readFileSync(manifestPath, "utf-8"));
+      if (Array.isArray(manifestData.web_accessible_resources)) {
+        let changed = false;
+        manifestData.web_accessible_resources.forEach((resource) => {
+          if ("use_dynamic_url" in resource) {
+            delete resource.use_dynamic_url;
+            changed = true;
+          }
+        });
+        if (changed) {
+          writeFileSync(manifestPath, JSON.stringify(manifestData, null, 2));
+          console.log("Removed 'use_dynamic_url' from web_accessible_resources in manifest.json for Firefox.");
+        }
+      }
+    } else {
+      console.error("Manifest file not found.");
+    }
   }
 }
 function patchCSPUnsafeGlobals() {

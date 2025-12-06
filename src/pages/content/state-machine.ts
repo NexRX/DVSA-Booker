@@ -19,7 +19,7 @@ import { secondsToHumanReadable } from "@src/logic/date";
 
 type LazyUiExports = {
   waitUI: (waitSeconds?: number, randomize?: boolean) => Promise<void>;
-  setMessage: (msg: string | undefined) => void;
+  setMessage: (msg: string | undefined) => Promise<void>;
 };
 type PageState = Awaited<ReturnType<typeof updatedState>>;
 type StateMatch = PageState | RegExp | ((state: PageState) => boolean);
@@ -196,6 +196,8 @@ export const contentMachine = new ContentStateMachine()
   .on(
     "login",
     async (ctx) => {
+      ctx.setMessage("Waiting to login to seem more human");
+      await ctx.waitUI(5);
       ctx.setMessage("Attempting auto login");
       await onLogin();
       ctx.recheck(60);

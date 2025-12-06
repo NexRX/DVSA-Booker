@@ -1,9 +1,11 @@
-import { Component, JSX, Show } from "solid-js";
+import { Component, JSX, Match, Show, Switch } from "solid-js";
 import Toggle from "./components/toggle";
 import InputGroup from "./components/input-group";
 import { state, setState } from "@src/state/solid";
 import Button from "./components/button";
 import { navigateTo } from "@src/logic/navigation";
+import { isPaused, setIsPaused, waitingSeconds } from "../content/content-ui";
+import { uiShared } from "@src/state/solid";
 
 const Home: Component = () => {
   const FALLBACK = "Unknown (Visit Booking Details Page)";
@@ -31,7 +33,25 @@ const Home: Component = () => {
           })()}
         </p>
       </InputGroup>
-
+      <p class="text-white border border-black p-1 rounded">
+        Message: <span class="font-mono">{uiShared().message ?? "idle..."}</span>
+      </p>
+      <Show when={waitingSeconds() !== undefined}>
+        <p class="text-white border border-black p-1 rounded">
+          Waiting: <span class="font-mono">{Math.floor(waitingSeconds() ?? 0)}</span>s
+        </p>
+        <Switch>
+          <Match when={!isPaused()}>
+            <Button onClick={() => setIsPaused(true)}>Pause</Button>
+          </Match>
+          <Match when={isPaused()}>
+            <Button onClick={() => setIsPaused(false)}>Resume</Button>
+          </Match>
+        </Switch>
+      </Show>
+      <Button onClick={stop} class="!mt-2">
+        Stop Alert Sounds
+      </Button>
       <Button onClick={() => navigateTo("login", true)}>Open DVSA Booking</Button>
     </div>
   );

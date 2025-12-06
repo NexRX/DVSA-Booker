@@ -79,7 +79,7 @@ function textIncludes(el: Element | null, needle: string) {
 
 async function detectState(path: string): Promise<TSearch["state"]> {
   // Allow DOM to settle slightly
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await new Promise((resolve) => setTimeout(resolve, 120));
 
   if (detectCaptchaHeadline()) return "captcha";
   else if (detectBanned()) return "banned";

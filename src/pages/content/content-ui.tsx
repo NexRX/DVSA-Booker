@@ -22,9 +22,10 @@
 import { Component, createSignal, Show, Switch, Match } from "solid-js";
 import { render } from "solid-js/web";
 import { search } from "@src/state/solid";
-import { getConfig } from "@src/state";
+import { getConfig, setMessage } from "@src/state";
 import { randomVariation } from "@src/logic/simulate";
 import { stop } from "../background/exports";
+import { uiShared, setUiShared } from "@src/state/solid";
 import styles from "@src/styles/index.css?url";
 import Button from "../popup/components/button";
 
@@ -33,12 +34,6 @@ import Button from "../popup/components/button";
 /* -------------------------------------------------------------------------- */
 
 /** Human-readable status message. */
-export const [message, setMessageInner] = createSignal<string | undefined>(undefined);
-export function setMessage(message: string | undefined) {
-  console.log("Message:", message);
-  setMessageInner(message);
-}
-
 /** Remaining seconds (float) in the active wait countdown; undefined if inactive. */
 export const [waitingSeconds, setWaitingSeconds] = createSignal<number | undefined>(undefined);
 
@@ -132,6 +127,7 @@ let mounted = false;
  * Call once early in main execution path (e.g., after enabling logic).
  */
 export function mountContentUI() {
+  console.log("Injecting UI");
   if (mounted) return;
   mounted = true;
 
@@ -154,7 +150,7 @@ export function mountContentUI() {
           State: <span class="font-mono">{search().state}</span>
         </p>
         <p class="text-white border border-black p-1 rounded">
-          Message: <span class="font-mono">{message() ?? "idle..."}</span>
+          Message: <span class="font-mono">{uiShared().message ?? "idle..."}</span>
         </p>
         <Show when={waitingSeconds() !== undefined}>
           <p class="text-white border border-black p-1 rounded">
@@ -204,7 +200,7 @@ function ensureStyles() {
  * @example await messageAndWait("Retrying soon", 30);
  */
 export async function messageAndWait(msg: string, seconds?: number, randomize: boolean = true) {
-  setMessage(msg);
+  await setMessage(msg);
   await waitUI(seconds, randomize);
 }
 

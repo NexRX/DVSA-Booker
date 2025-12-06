@@ -8,6 +8,9 @@ import Settings from "./settings";
 import Config from "./config";
 import { Security } from "./security";
 
+// @ts-ignore
+const version = __APP_VERSION__;
+
 const appContainer = document.querySelector("#app-container");
 if (!appContainer) {
   throw new Error("Can not find AppContainer");
@@ -31,7 +34,7 @@ function Popup() {
         ]}
       />
       <footer class="text-center text-gray-500 text-xs">
-        Developed by Nex - V{state().version} © {new Date().getFullYear()}
+        Developed by Nex - V{version} © {new Date().getFullYear()}
       </footer>
     </div>
   );

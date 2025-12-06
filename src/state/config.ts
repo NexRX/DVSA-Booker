@@ -14,7 +14,10 @@ export type TConfig = {
   showCentersMax?: number;
   /** Seconds to wait before restarting if no progression */
   fallbackRestartSeconds?: number;
+  /** Whether to inject UI on security pages */
   dontInjectUIOnSecurityPages: boolean;
+  /** Whether to inject UI on unknown pages */
+  dontInjectUIOnUnknownPages: boolean;
 };
 
 const configDefaultV0: TConfig = {
@@ -25,6 +28,7 @@ const configDefaultV0: TConfig = {
   showCentersMax: 12,
   fallbackRestartSeconds: 120,
   dontInjectUIOnSecurityPages: true,
+  dontInjectUIOnUnknownPages: false,
 };
 
 export const initialConfig = configDefaultV0;

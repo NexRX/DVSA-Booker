@@ -1,6 +1,6 @@
 import { getTestDetails, getDaysAllowedNumberArray, TTestDetails, fallbackSeconds } from "@src/state";
 import { parseTestDateTime, secondsToHumanReadable } from "@src/logic/date";
-import { setMessage } from "./content-ui";
+import { setMessage } from "@src/state";
 
 /**
  * Centralized selectors for easier maintenance.
