@@ -6,6 +6,7 @@ import Button from "./components/button";
 import { navigateTo } from "@src/logic/navigation";
 import { setIsPaused } from "@src/state/ui";
 import { uiShared } from "@src/state/solid";
+import { stop } from "../background/exports";
 
 const Home: Component = () => {
   const FALLBACK = "Unknown (Visit Booking Details Page)";
