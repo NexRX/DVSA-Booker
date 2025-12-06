@@ -1,7 +1,7 @@
 {
   "name": "dvsa-booker",
   "displayName": "DVSA Test Booker",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Automate the process of booking DVSA practical tests",
   "license": "MIT",
   "repository": {

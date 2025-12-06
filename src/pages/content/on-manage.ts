@@ -122,6 +122,8 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
       currentTestLocation: currentLocation,
     });
 
+    ctx.setMessage("Waiting to search to seem more human");
+    await ctx.waitUI(5);
     click("test-centre-change");
   },
 
