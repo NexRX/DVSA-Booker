@@ -1,4 +1,4 @@
-import { playAudio, stopAudio, type PlayAudioOptions } from "./audio";
+import { playAudio, stopAudio } from "./audio.chrome";
 import { BackgroundMessage } from "./exports";
 
 chrome.runtime.onMessage.addListener((message: BackgroundMessage, sender, sendResponse) => {

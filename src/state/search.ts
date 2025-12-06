@@ -1,11 +1,13 @@
-import { StorageItem } from "webext-storage";
-
-import { storage } from "@src/state/storage";
-
-import { state } from "@src/state/state";
-
-import { exists } from "@src/logic/dom";
-import { detectCaptchaHeadline } from "@src/logic/selectors";
+/**
+ * Search State Management (Native Extension Storage)
+ *
+ * Purpose:
+ *  Tracks the current search state, including login, captcha, banned, wait, queue, search-limit, and managed states.
+ *  Uses browser.storage.local (or chrome.storage.local) for cross-browser compatibility (Chrome & Firefox).
+ *
+ * Usage:
+ *  import { getSearch, setSearch, updatedState, ... } from "./search";
+ */
 
 export const SEARCH_KEY = "search";
 
@@ -20,11 +22,38 @@ export type ManageState =
 
 export type TSearch = {
   version: 0;
-
   state: "login" | "banned" | "captcha" | "wait" | "queue" | "search-limit" | "unknown" | ManageState;
 };
 
-// Centralized DOM selectors for state detection (kept local to avoid creating a new file dependency)
+export const initialSearch: TSearch = {
+  version: 0,
+  state: "unknown",
+};
+
+/* -------------------------------------------------------------------------- */
+/* Native Storage Helpers                                                     */
+/* -------------------------------------------------------------------------- */
+
+function getStorageApi() {
+  // @ts-ignore
+  return typeof browser !== "undefined" ? browser : chrome;
+}
+
+export async function getSearch(): Promise<TSearch> {
+  const api = getStorageApi();
+  const result = await api.storage.local.get(SEARCH_KEY);
+  return result[SEARCH_KEY] ?? initialSearch;
+}
+
+export async function setSearch(value: TSearch): Promise<void> {
+  const api = getStorageApi();
+  await api.storage.local.set({ [SEARCH_KEY]: value });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Centralized DOM selectors for state detection                              */
+/* -------------------------------------------------------------------------- */
+
 const SELECTORS = {
   headlineInnerParagraph: ".headline-inner p",
   bannedIframe: "body iframe",
@@ -36,26 +65,17 @@ const SELECTORS = {
   candidateNo: "#i-am-not-candidate",
 };
 
-// TODO: Implement detection of wait & queue
+/* -------------------------------------------------------------------------- */
+/* Safe text-content includes utility (guards nulls)                          */
+/* -------------------------------------------------------------------------- */
 
-const searchDefaultV0 = {
-  version: 0,
-
-  state: "unknown",
-} as const;
-
-export const initialSearch = searchDefaultV0;
-
-export const search = new StorageItem<TSearch>(SEARCH_KEY, {
-  defaultValue: initialSearch,
-
-  area: storage,
-});
-
-// Safe text-content includes utility (guards nulls)
 function textIncludes(el: Element | null, needle: string) {
   return !!el && !!el.textContent && el.textContent.includes(needle);
 }
+
+/* -------------------------------------------------------------------------- */
+/* State Detection Logic                                                      */
+/* -------------------------------------------------------------------------- */
 
 async function detectState(path: string): Promise<TSearch["state"]> {
   // Allow DOM to settle slightly
@@ -66,7 +86,6 @@ async function detectState(path: string): Promise<TSearch["state"]> {
   else if (path.startsWith("/login")) return "login";
   else if (path.startsWith("/manage")) {
     const manageState = detectManagedState();
-
     if (manageState !== "unknown") return manageState;
   }
 
@@ -76,18 +95,18 @@ async function detectState(path: string): Promise<TSearch["state"]> {
   return "unknown";
 }
 
-export async function updatedState(path: string = window.location.pathname): Promise<TSearch["state"]> {
-  const stateValue = await detectState(path);
-
-  await search.set({ ...(await search.get()), state: stateValue });
-
-  console.log("State:", stateValue);
-
-  return stateValue;
+function detectCaptchaHeadline(): boolean {
+  const el = document.querySelector(SELECTORS.headlineInnerParagraph);
+  return textIncludes(el, "Additional security check is required");
 }
-function detectBanned() {
+
+function detectBanned(): boolean {
   const iframe = document.querySelector(SELECTORS.bannedIframe);
   return !!iframe && iframe.innerHTML.startsWith("Request unsuccessful. Incapsula incident ID:");
+}
+
+function exists(selector: string): boolean {
+  return document.querySelector(selector) !== null;
 }
 
 function detectManagedState(): ManageState {
@@ -116,4 +135,20 @@ function detectManagedState(): ManageState {
   if (confirmBooking && finalConfirm) return "manage-confirm-changes-final";
 
   return "unknown";
+}
+
+/* -------------------------------------------------------------------------- */
+/* Public API                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Updates the search state based on current DOM and path.
+ * Persists the new state in extension storage.
+ */
+export async function updatedState(path: string = window.location.pathname): Promise<TSearch["state"]> {
+  const stateValue = await detectState(path);
+  const current = await getSearch();
+  await setSearch({ ...current, state: stateValue });
+  console.log("State:", stateValue);
+  return stateValue;
 }

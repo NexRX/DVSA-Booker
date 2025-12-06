@@ -20,9 +20,6 @@ importers:
       solid-js:
         specifier: ^1.9.7
         version: 1.9.7
-      webext-storage:
-        specifier: ^2.0.1
-        version: 2.0.1
     devDependencies:
       '@crxjs/vite-plugin':
         specifier: ^2.0.3
@@ -3176,13 +3173,6 @@ packages:
     resolution: {integrity: sha512-c5EGNOiyxxV5qmTtAB7rbiXxi1ooX1pQKMLX/MIabJjRA0SJBQOjKF+KSVfHkr9U1cADPon0mRiVe/riyaiDUA==}
     engines: {node: '>=10.13.0'}
 
-  webext-polyfill-kinda@1.0.2:
-    resolution: {integrity: sha512-rqQUKeBTOicej0tjDJWDQlOTnDcm9yYJTzgI+7rMdyYV4QHmYMRm+yjkcVgECkg/Wu9MboZ4lYeBPdp1Ep9WgQ==}
-
-  webext-storage@2.0.1:
-    resolution: {integrity: sha512-DbKAiV4xUva9grslYC/A7jv7mIlWikU+QvadQp54V21Hqsfx4fHWFhSF2GVvEcf7mSvTHOXp0U86hG5Qyv9W2w==}
-    engines: {node: '>=20'}
-
   webextension-polyfill@0.10.0:
     resolution: {integrity: sha512-c5s35LgVa5tFaHhrZDnr3FpQpjj1BB+RXhLTYUxGqBVN460HkbM8TBtEqdXWbpTKfzwCcjAZVF7zXCYSKtcp9g==}
 
@@ -5133,14 +5123,14 @@ snapshots:
     dependencies:
       '@tootallnate/once': 2.0.0
       agent-base: 6.0.2
-      debug: 4.4.1(supports-color@5.5.0)
+      debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
 
   https-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
-      debug: 4.4.1(supports-color@5.5.0)
+      debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
 
@@ -6682,12 +6672,6 @@ snapshots:
     dependencies:
       glob-to-regexp: 0.4.1
       graceful-fs: 4.2.11
-
-  webext-polyfill-kinda@1.0.2: {}
-
-  webext-storage@2.0.1:
-    dependencies:
-      webext-polyfill-kinda: 1.0.2
 
   webextension-polyfill@0.10.0: {}
 

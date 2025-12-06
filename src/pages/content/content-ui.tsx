@@ -22,7 +22,7 @@
 import { Component, createSignal, Show, Switch, Match } from "solid-js";
 import { render } from "solid-js/web";
 import { search } from "@src/state/solid";
-import { config as configState } from "@src/state";
+import { getConfig } from "@src/state";
 import { randomVariation } from "@src/logic/simulate";
 import { stop } from "../background/exports";
 import styles from "@src/styles/index.css?url";
@@ -58,7 +58,7 @@ let activeResolve: (() => void) | null = null;
  * @param randomize Whether to apply percentage randomization
  */
 export async function waitUI(explicitSeconds?: number, randomize: boolean = true): Promise<void> {
-  const cfg = await configState.get();
+  const cfg = await getConfig();
   let base = explicitSeconds ?? cfg.timingRefresh;
   const pct = randomize ? cfg.timingRandomizePercent : 0;
 

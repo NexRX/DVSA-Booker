@@ -34,8 +34,7 @@
  * All exported helpers are pure wrappers around the stored state.
  */
 
-import { StorageItem } from "webext-storage";
-import { storage } from "./storage";
+import { storage, storageNative } from "./storage";
 
 /* -------------------------------------------------------------------------- */
 /* Constants                                                                  */
@@ -99,15 +98,6 @@ const initialSecurityV0: TSecurity = {
 export const initialSecurity = initialSecurityV0;
 
 /* -------------------------------------------------------------------------- */
-/* Storage Item                                                               */
-/* -------------------------------------------------------------------------- */
-
-export const security = new StorageItem<TSecurity>(SECURITY_KEY, {
-  defaultValue: initialSecurity,
-  area: storage,
-});
-
-/* -------------------------------------------------------------------------- */
 /* Internal Helpers                                                           */
 /* -------------------------------------------------------------------------- */
 
@@ -138,7 +128,10 @@ function deriveRemainingSeconds(nextTimestamp?: number): number {
 /* -------------------------------------------------------------------------- */
 
 export async function getSecurity(): Promise<TSecurity> {
-  return await security.get();
+  // @ts-ignore
+  const api = typeof browser !== "undefined" ? browser : chrome;
+  const result = await api.storage.local.get(SECURITY_KEY);
+  return result[SECURITY_KEY] ?? initialSecurity;
 }
 
 /**
@@ -204,6 +197,13 @@ export async function recommendedWaitBeforeRetry(type?: "captcha" | "banned"): P
 /* Public API: Mutations - Recording Events                                   */
 /* -------------------------------------------------------------------------- */
 
+// Helper to set the security state
+export async function setSecurity(value: TSecurity): Promise<void> {
+  // @ts-ignore
+  const api = typeof browser !== "undefined" ? browser : chrome;
+  await api.storage.local.set({ [SECURITY_KEY]: value });
+}
+
 /**
  * Record a captcha event & escalate backoff.
  */
@@ -219,7 +219,7 @@ export async function recordCaptcha(): Promise<TSecurity> {
     nextRetryCaptcha: nextRetry,
     lastType: "captcha",
   };
-  await security.set(updated);
+  await setSecurity(updated);
   return updated;
 }
 
@@ -238,7 +238,7 @@ export async function recordBanned(): Promise<TSecurity> {
     nextRetryBanned: nextRetry,
     lastType: "banned",
   };
-  await security.set(updated);
+  await setSecurity(updated);
   return updated;
 }
 
@@ -257,7 +257,7 @@ export async function resetCaptchaBackoff(): Promise<TSecurity> {
     nextRetryCaptcha: undefined,
     lastType: s.lastType === "captcha" ? undefined : s.lastType,
   };
-  await security.set(updated);
+  await setSecurity(updated);
   return updated;
 }
 
@@ -272,7 +272,7 @@ export async function resetBannedBackoff(): Promise<TSecurity> {
     nextRetryBanned: undefined,
     lastType: s.lastType === "banned" ? undefined : s.lastType,
   };
-  await security.set(updated);
+  await setSecurity(updated);
   return updated;
 }
 
@@ -287,7 +287,7 @@ export async function setManualPause(seconds: number): Promise<TSecurity> {
     ...s,
     manualPauseUntil,
   };
-  await security.set(updated);
+  await setSecurity(updated);
   return updated;
 }
 
@@ -302,7 +302,7 @@ export async function clearManualPause(): Promise<TSecurity> {
  * Reset all security/backoff state to initial values.
  */
 export async function resetAllSecurity(): Promise<TSecurity> {
-  await security.set({ ...initialSecurity });
+  await setSecurity({ ...initialSecurity });
   return await getSecurity();
 }
 

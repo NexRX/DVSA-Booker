@@ -19,8 +19,7 @@
     "@webext-core/storage": "^1.2.0",
     "lodash-es": "^4.17.21",
     "nanostores-persistent-solid": "^0.1.7",
-    "solid-js": "^1.9.7",
-    "webext-storage": "^2.0.1"
+    "solid-js": "^1.9.7"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.3",

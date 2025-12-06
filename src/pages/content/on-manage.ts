@@ -12,7 +12,7 @@
  * Default export `onManage(state)` still exists for backward compatibility with existing imports.
  */
 
-import { testDetails, getDaysAllowedNumberArray, config as Config, TTestDetails, state as appState, state } from "@src/state";
+import { getTestDetails, getDaysAllowedNumberArray, getConfig, TTestDetails, getState, setState } from "@src/state";
 import { ManageState } from "@src/state/search";
 import { click, simulateTyping, wait } from "@src/logic/simulate";
 import { setMessage, waitUI } from "./content-ui";
@@ -36,8 +36,8 @@ import { SELECTORS, getBookableCalendarLinks, getActiveSlotInputs } from "@src/l
 
 interface ManageHandlerContext {
   state: ManageState;
-  details: Awaited<ReturnType<typeof testDetails.get>>;
-  config: Awaited<ReturnType<typeof Config.get>>;
+  details: Awaited<ReturnType<typeof getTestDetails>>;
+  config: Awaited<ReturnType<typeof getConfig>>;
   setMessage: (msg: string | undefined) => void;
   waitUI: (seconds?: number, randomize?: boolean) => Promise<void>;
   navigateToLogin: () => void;
@@ -64,8 +64,8 @@ export default async function onManage(state: ManageState) {
  * Main dispatcher: resolves handler or falls back.
  */
 export async function runManageState(state: ManageState) {
-  const details = await testDetails.get();
-  const config = await Config.get();
+  const details = await getTestDetails();
+  const config = await getConfig();
 
   // Small natural delay to allow DOM to settle if navigation just occurred
   await wait(100, 20);
@@ -115,8 +115,8 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
     }
 
     // Persist current test meta in app state
-    appState.set({
-      ...(await appState.get()),
+    await setState({
+      ...(await getState()),
       currentTestDate: parsedDate.getTime(),
       currentTestLocation: currentLocation,
     });
@@ -233,8 +233,8 @@ async function findTest(details: TTestDetails) {
   const allowedDays = await getDaysAllowedNumberArray();
   const allowedCenters = details.allowedLocations ?? [];
 
-  const onlyMatchSooner = (await testDetails.get()).onlyMatchSooner;
-  const currentTestDate = onlyMatchSooner ? new Date((await state.get()).currentTestDate) : null;
+  const onlyMatchSooner = (await getTestDetails()).onlyMatchSooner;
+  const currentTestDate = onlyMatchSooner ? new Date((await getState()).currentTestDate) : null;
 
   const filtered = sortedDateLinks
     .filter(([date, _, name]) => {
@@ -270,7 +270,7 @@ async function findTest(details: TTestDetails) {
  * Attempt to click earliest acceptable test date in calendar.
  */
 async function internalClickTestDate(): Promise<boolean> {
-  const setting = await testDetails.get();
+  const setting = await getTestDetails();
   const min = new Date(setting.minDate ?? Date.now());
   const max = new Date(setting.maxDate ?? Date.now() + 1000 * 60 * 60 * 24 * 180);
 
@@ -344,9 +344,9 @@ async function internalIsConfirmationTestCenterQualifies(): Promise<boolean> {
     return false;
   }
 
-  const onlyMatchSooner = (await testDetails.get()).onlyMatchSooner;
+  const onlyMatchSooner = (await getTestDetails()).onlyMatchSooner;
 
-  const details = await testDetails.get();
+  const details = await getTestDetails();
   const allowedCenters = details.allowedLocations ?? [];
   const isSooner = !onlyMatchSooner || newTestDate < oldTestDate;
   const isWithinRange = newTestDate >= new Date(details.minDate ?? 0) && newTestDate <= new Date(details.maxDate ?? 0);

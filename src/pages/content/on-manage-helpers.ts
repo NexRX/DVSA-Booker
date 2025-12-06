@@ -1,6 +1,5 @@
-import { testDetails, getDaysAllowedNumberArray, config as Config, TTestDetails, fallbackSeconds } from "@src/state";
+import { getTestDetails, getDaysAllowedNumberArray, TTestDetails, fallbackSeconds } from "@src/state";
 import { parseTestDateTime, secondsToHumanReadable } from "@src/logic/date";
-import { navigateTo } from "@src/logic/navigation";
 import { setMessage } from "./content-ui";
 
 /**
@@ -109,7 +108,7 @@ export async function confirmIfConfigurationAllows() {
     console.warn("Missing test dates for confirmation");
     return;
   }
-  const details = await testDetails.get();
+  const details = await getTestDetails();
   const isSooner = newTestDate < oldTestDate;
   const isValid = await isValidTestDate(newTestDate, details);
 

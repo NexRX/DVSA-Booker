@@ -1,5 +1,4 @@
-import { StorageItem } from "webext-storage";
-import { storage } from "./storage";
+import { storageNative } from "./storage";
 
 export const STATE_KEY = "state";
 
@@ -10,16 +9,23 @@ export type TState = {
   currentTestLocation?: string;
 };
 
-const initialStateV0 = {
+export const initialState: TState = {
   version: 0,
   enabled: true,
   currentTestDate: undefined,
   currentTestLocation: undefined,
-} as const;
+};
 
-export const initialState = initialStateV0;
+/**
+ * Get the current state from browser storage.
+ */
+export async function getState(): Promise<TState> {
+  return await storageNative.get<TState>(STATE_KEY, initialState);
+}
 
-export const state = new StorageItem<TState>(STATE_KEY, {
-  defaultValue: initialState,
-  area: storage,
-});
+/**
+ * Set the state in browser storage.
+ */
+export async function setState(value: TState): Promise<void> {
+  await storageNative.set<TState>(STATE_KEY, value);
+}

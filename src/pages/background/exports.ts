@@ -1,4 +1,16 @@
-import { type PlayAudioOptions } from "./audio";
+export interface PlayAudioOptions {
+  soundUrl: string;
+  /** If truthy, loop the audio and if number the delay between loops in milliseconds */
+  loop?: boolean | number;
+}
+
+export interface OffscreenPlayMessage extends PlayAudioOptions {
+  action: "offscreenPlay";
+}
+
+export interface OffscreenStopMessage {
+  action: "offscreenStop";
+}
 
 export type BackgroundMessage =
   | {

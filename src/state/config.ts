@@ -1,5 +1,4 @@
-import { StorageItem } from "webext-storage";
-import { storage } from "./storage";
+import { ifNeededMigrate, storageNative } from "./storage";
 
 export const CONFIG_KEY = "config";
 
@@ -15,24 +14,30 @@ export type TConfig = {
   showCentersMax?: number;
   /** Seconds to wait before restarting if no progression */
   fallbackRestartSeconds?: number;
+  dontInjectUIOnSecurityPages: boolean;
 };
 
-const configDefaultV0 = {
+const configDefaultV0: TConfig = {
   version: 0,
   timingRefresh: 300,
   timingSeeMore: 45,
   timingRandomizePercent: 33,
   showCentersMax: 12,
   fallbackRestartSeconds: 120,
-} as const;
+  dontInjectUIOnSecurityPages: true,
+};
 
 export const initialConfig = configDefaultV0;
 
-export const config = new StorageItem<TConfig>(CONFIG_KEY, {
-  defaultValue: initialConfig,
-  area: storage,
-});
+export async function getConfig(): Promise<TConfig> {
+  const config: TConfig = await storageNative.get<TConfig>(CONFIG_KEY, initialConfig);
+  return await ifNeededMigrate(config, configDefaultV0, setConfig);
+}
 
-export async function fallbackSeconds() {
-  return (await config.get()).fallbackRestartSeconds;
+export async function setConfig(value: TConfig): Promise<void> {
+  await storageNative.set<TConfig>(CONFIG_KEY, value);
+}
+
+export async function fallbackSeconds(): Promise<number | undefined> {
+  return (await getConfig()).fallbackRestartSeconds;
 }

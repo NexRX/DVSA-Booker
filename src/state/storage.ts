@@ -39,3 +39,46 @@ export function createStorageSignal<T extends Object>(key: string, defaultValue:
 
   return [value, updateValue] as const;
 }
+
+export const storageNative = {
+  /**
+   * Get a value from browser.storage.local, falling back to defaultValue if not set.
+   * @param key The storage key.
+   * @param defaultValue The value to return if nothing is stored.
+   */
+  async get<T>(key: string, defaultValue: T): Promise<T> {
+    // @ts-ignore
+    const api = typeof browser !== "undefined" ? browser : chrome;
+    const result = await api.storage.local.get(key);
+    return result[key] ?? defaultValue;
+  },
+
+  /**
+   * Set a value in browser.storage.local.
+   * @param key The storage key.
+   * @param value The value to store.
+   */
+  async set<T>(key: string, value: T): Promise<void> {
+    // @ts-ignore
+    const api = typeof browser !== "undefined" ? browser : chrome;
+    await api.storage.local.set({ [key]: value });
+  },
+};
+
+export async function ifNeededMigrate<T>(value: T, defaultValue: T, setter: (value: T) => Promise<void>): Promise<TConfig> {
+  let migrated = false;
+  for (const key in defaultValue) {
+    if (
+      value[key as keyof T] === undefined &&
+      defaultValue[key as keyof T] !== undefined &&
+      value[key as keyof T] !== defaultValue[key as keyof T]
+    ) {
+      // @ts-ignore
+      config[key as keyof TConfig] = configDefaultV0[key as keyof TConfig];
+      migrated = true;
+    }
+  }
+
+  if (migrated) await setter(value);
+  return value;
+}

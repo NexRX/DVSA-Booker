@@ -3,12 +3,15 @@ import packageJson from "../package.json";
 
 const [major, minor, patch, label = "0"] = packageJson.version.replace(/[^\d.-]+/g, "").split(/[.-]/);
 
+const FIREFOX = process.env.FIREFOX ? true : false;
+const CHROME = !FIREFOX;
+
 export default defineManifest({
   manifest_version: 3,
   name: packageJson.displayName ?? packageJson.name,
   version: `${major}.${minor}.${patch}.${label}`,
   description: packageJson.description,
-  permissions: ["storage", "offscreen"],
+  permissions: CHROME ? ["storage", "offscreen"] : ["storage"],
   action: {
     // @ts-ignore
     default_popup: "src/pages/popup/index.html",
@@ -17,7 +20,9 @@ export default defineManifest({
   },
   background: {
     // @ts-ignore
-    service_worker: "src/pages/background/background.ts",
+    service_worker: CHROME ? "src/pages/background/background.chrome.ts" : undefined,
+    // @ts-ignore
+    scripts: FIREFOX ? ["src/pages/background/background.firefox.ts"] : undefined,
   },
   web_accessible_resources: [
     {
@@ -32,4 +37,12 @@ export default defineManifest({
       js: ["src/pages/content/index.ts"],
     },
   ],
+  browser_specific_settings: {
+    gecko: {
+      id: "dvsa-test-booker@nexhub.co.uk",
+      data_collection_permissions: {
+        required: ["none"],
+      },
+    },
+  },
 });

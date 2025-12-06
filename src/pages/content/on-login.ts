@@ -1,8 +1,8 @@
-import { testDetails } from "@src/state";
+import { getTestDetails } from "@src/state";
 import { click, simulateTyping } from "@src/logic/simulate";
 
 export default async function onLogin() {
-  const setting = await testDetails.get();
+  const setting = await getTestDetails();
 
   if (!setting.driverLicence || !setting.driverTestReference) return;
   if (document.getElementById("unavailability-notice") != null) {

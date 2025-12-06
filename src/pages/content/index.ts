@@ -1,10 +1,10 @@
-import { state } from "@src/state";
+import { getState } from "@src/state";
 import { contentMachine } from "./state-machine";
 import { mountContentUI, waitUI, setMessage } from "./content-ui";
 import { stop } from "../background/exports";
 
 async function main() {
-  const enabled = (await state.get()).enabled;
+  const enabled = (await getState()).enabled;
   if (!enabled) return;
 
   // Mount overlay UI (message + countdown) once.

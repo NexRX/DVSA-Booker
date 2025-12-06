@@ -1,5 +1,9 @@
-import { StorageItem } from "webext-storage";
-import { storage } from "./storage";
+/**
+ * Test Details State (Settings)
+ *
+ * Ported to use native browser storage API (browser.storage.local/chrome.storage.local)
+ * for compatibility with both Chrome and Firefox extensions.
+ */
 
 const SEVEN_MONTHS_MS = 7 * 30 * 24 * 60 * 60 * 1000;
 export const TEST_DETAILS_KEY = "test-details";
@@ -24,7 +28,7 @@ export type TTestDetails = {
   maxHour?: number;
 };
 
-const testDetailsDefaultV0 = {
+export const initialTestDetails: TTestDetails = {
   version: 0,
   driverLicence: undefined,
   driverTestReference: undefined,
@@ -42,17 +46,44 @@ const testDetailsDefaultV0 = {
   allowSunday: true,
   minHour: undefined,
   maxHour: undefined,
-} as const;
+};
 
-export const initialTestDetails = testDetailsDefaultV0;
+/**
+ * Helper for native extension storage (browser/chrome)
+ */
+const storageNative = {
+  async get<T>(key: string, defaultValue: T): Promise<T> {
+    // @ts-ignore
+    const api = typeof browser !== "undefined" ? browser : chrome;
+    const result = await api.storage.local.get(key);
+    return result[key] ?? defaultValue;
+  },
+  async set<T>(key: string, value: T): Promise<void> {
+    // @ts-ignore
+    const api = typeof browser !== "undefined" ? browser : chrome;
+    await api.storage.local.set({ [key]: value });
+  },
+};
 
-export const testDetails = new StorageItem<TTestDetails>(TEST_DETAILS_KEY, {
-  defaultValue: initialTestDetails,
-  area: storage,
-});
+/**
+ * Get the current test details state.
+ */
+export async function getTestDetails(): Promise<TTestDetails> {
+  return await storageNative.get<TTestDetails>(TEST_DETAILS_KEY, initialTestDetails);
+}
 
-export async function getDaysAllowedNumberArray() {
-  const details = await testDetails.get();
+/**
+ * Set the test details state.
+ */
+export async function setTestDetails(value: TTestDetails): Promise<void> {
+  await storageNative.set<TTestDetails>(TEST_DETAILS_KEY, value);
+}
+
+/**
+ * Get array of allowed days as numbers (0=Sunday, 1=Monday, ..., 6=Saturday)
+ */
+export async function getDaysAllowedNumberArray(): Promise<number[]> {
+  const details = await getTestDetails();
   const daysAllowed = [
     details.allowSunday ? 0 : null,
     details.allowMonday ? 1 : null,
@@ -61,7 +92,7 @@ export async function getDaysAllowedNumberArray() {
     details.allowThursday ? 4 : null,
     details.allowFriday ? 5 : null,
     details.allowSaturday ? 6 : null,
-  ].filter((day) => day !== null);
+  ].filter((day) => day !== null) as number[];
 
   return daysAllowed;
 }
