@@ -155,7 +155,7 @@ export function mountContentUI() {
           </Switch>
         </Show>
         <Button onClick={stop} class="!mt-2">
-          Stop Alert Sounds
+          Stop Any Sounds
         </Button>
       </div>
     );

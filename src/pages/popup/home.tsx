@@ -51,7 +51,7 @@ const Home: Component = () => {
         </Switch>
       </Show>
       <Button onClick={stop} class="!mt-2">
-        Stop Alert Sounds
+        Stop Any Sounds
       </Button>
       <Button onClick={() => navigateTo("login", true)}>Open DVSA Booking</Button>
     </div>
