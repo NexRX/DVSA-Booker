@@ -150,7 +150,7 @@ const manageHandlers: Record<ManageState | "unknown", ManageHandler> = {
         await ctx.waitUI(ctx.config.timingSeeMore);
         click("fetch-more-centres");
       } else {
-        ctx.setMessage("No tests found & max centres loaded, will restarting search...");
+        ctx.setMessage("No tests found & max centres loaded, will restart search...");
         await ctx.waitUI(); // uses config refresh timing
         click("test-centres-submit");
       }
