@@ -34,21 +34,8 @@ const Home: Component = () => {
         </p>
       </InputGroup>
       <p class="text-white border border-black p-1 rounded">
-        Message: <span class="font-mono">{uiShared().message ?? "idle..."}</span>
+        Last Message: <span class="font-mono">{uiShared().message ?? "idle..."}</span>
       </p>
-      <Show when={waitingSeconds() !== undefined}>
-        <p class="text-white border border-black p-1 rounded">
-          Waiting: <span class="font-mono">{Math.floor(waitingSeconds() ?? 0)}</span>s
-        </p>
-        <Switch>
-          <Match when={!isPaused()}>
-            <Button onClick={() => setIsPaused(true)}>Pause</Button>
-          </Match>
-          <Match when={isPaused()}>
-            <Button onClick={() => setIsPaused(false)}>Resume</Button>
-          </Match>
-        </Switch>
-      </Show>
       <Button onClick={stop} class="!mt-2">
         Stop Alert Sounds
       </Button>
