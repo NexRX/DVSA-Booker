@@ -199,8 +199,7 @@ export const contentMachine = new ContentStateMachine()
       ctx.setMessage("Waiting to login to seem more human");
       await ctx.waitUI(5);
       ctx.setMessage("Attempting auto login");
-      await onLogin();
-      ctx.recheck(60);
+      if (await onLogin()) ctx.recheck(60);
     },
     { description: "Login handler", priority: 10 }
   )
