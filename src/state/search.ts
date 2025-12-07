@@ -18,6 +18,7 @@ export type ManageState =
   | "manage-test-time"
   | "manage-confirm-who-are-you"
   | "manage-confirm-changes-final"
+  | "unavailable"
   | "unknown";
 
 export type TSearch = {
@@ -83,6 +84,7 @@ async function detectState(path: string): Promise<TSearch["state"]> {
 
   if (detectCaptchaHeadline()) return "captcha";
   else if (detectBanned()) return "banned";
+  else if (document.getElementById("unavailability-notice")) return "unavailable";
   else if (path.startsWith("/login")) return "login";
   else if (path.startsWith("/manage")) {
     const manageState = detectManagedState();

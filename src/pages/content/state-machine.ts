@@ -230,7 +230,7 @@ export const contentMachine = new ContentStateMachine()
     },
     { description: "Captcha backoff", priority: 9 }
   )
-  // Banned handler with backoff
+  // backoff handlers
   .on(
     "banned",
     async (ctx) => {
@@ -258,6 +258,16 @@ export const contentMachine = new ContentStateMachine()
       ctx.navigate("login");
     },
     { description: "Search limit backoff" }
+  )
+  .on(
+    "unavailable",
+    async (ctx) => {
+      ctx.setMessage("Service unavailable, waiting 6 hours before retry");
+      const SIX_HOURS_IN_SECONDS = 6 * 60 * 60;
+      await ctx.waitUI(SIX_HOURS_IN_SECONDS, false);
+      ctx.navigate("login");
+    },
+    { description: "Service unavailable backoff" }
   )
   // Fallback
   .onFallback(async (ctx) => {
