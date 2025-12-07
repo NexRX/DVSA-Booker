@@ -28,7 +28,7 @@ const configDefaultV0: TConfig = {
   timingRandomizePercent: 33,
   showCentersMax: 12,
   fallbackRestartSeconds: 120,
-  enableInjectedUI: false,
+  enableInjectedUI: true,
   dontInjectUIOnSecurityPages: true,
   dontInjectUIOnUnknownPages: false,
 };
